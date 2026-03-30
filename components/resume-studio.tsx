@@ -39,7 +39,7 @@ import {
   recomputeWorkspaceData,
   type ResumeContentDocument,
 } from "@/lib/resume-document";
-import { loadWorkspace, saveWorkspace } from "@/lib/storage";
+import { clearWorkspace, loadWorkspace, saveWorkspace } from "@/lib/storage";
 import {
   finalizeTemplateManifestCandidates,
   type TemplateManifest,
@@ -326,6 +326,74 @@ const experienceHasMetric = (experience: ExperienceAsset) => {
 
 const educationHasSignal = (education: EducationAsset) =>
   (education.highlights ?? []).some((highlight) => Boolean(highlight.value?.trim()));
+
+const buildRecognizedContactSummary = (profile: ResumeContentDocument["profile"]) => {
+  const recognized: string[] = [];
+
+  if (profile.phone.trim()) {
+    recognized.push("电话");
+  }
+
+  if (profile.email.trim()) {
+    recognized.push("邮箱");
+  }
+
+  if (profile.location.trim()) {
+    recognized.push("所在地");
+  }
+
+  return recognized.length > 0 ? recognized.join("、") : "还没识别到";
+};
+
+const buildExperienceCountSummary = (contentDocument: ResumeContentDocument) => {
+  const internshipCount = contentDocument.experiences.filter(
+    (experience) => (experience.section ?? "internship") === "internship",
+  ).length;
+  const campusCount = contentDocument.experiences.filter(
+    (experience) => experience.section === "campus",
+  ).length;
+  const totalCount = internshipCount + campusCount;
+
+  if (totalCount === 0) {
+    return "还没识别到";
+  }
+
+  if (internshipCount > 0 && campusCount > 0) {
+    return `已识别 ${totalCount} 段（实习 ${internshipCount}，在校 ${campusCount}）`;
+  }
+
+  if (internshipCount > 0) {
+    return `已识别 ${internshipCount} 段实习`;
+  }
+
+  return `已识别 ${campusCount} 段在校经历`;
+};
+
+const buildPasteRecognitionSummary = (contentDocument: ResumeContentDocument) => [
+  {
+    label: "姓名",
+    value: contentDocument.profile.fullName.trim() || "还没识别到",
+  },
+  {
+    label: "目标岗位",
+    value: contentDocument.profile.targetRole.trim() || "还没识别到",
+  },
+  {
+    label: "联系方式",
+    value: buildRecognizedContactSummary(contentDocument.profile),
+  },
+  {
+    label: "教育经历",
+    value:
+      contentDocument.education.length > 0
+        ? `已识别 ${contentDocument.education.length} 段`
+        : "还没识别到",
+  },
+  {
+    label: "经历",
+    value: buildExperienceCountSummary(contentDocument),
+  },
+];
 
 const resolveFollowUpTarget = ({
   activeEducationId,
@@ -1318,12 +1386,39 @@ export function ResumeStudio() {
     initialRestoreLockedRef.current = true;
     setIsPasteGenerating(false);
     setTemplateCandidateState(null);
+    setActiveEntryMode("paste");
     setEditorFlowMode("review");
     setActiveEducationId(null);
     setActiveExperienceId(null);
     setGuidedRefinementHint(null);
     setStarterExportLockSignature(null);
     setStage("paste");
+  };
+
+  const handleReturnToPasteSource = () => {
+    initialRestoreLockedRef.current = true;
+    setIsPasteGenerating(false);
+    if (templateRefreshTimerRef.current) {
+      clearTimeout(templateRefreshTimerRef.current);
+      templateRefreshTimerRef.current = null;
+    }
+    templateGenerationRequestIdRef.current += 1;
+    lastTemplateRefreshSignatureRef.current = null;
+    setTemplateCandidateState(null);
+    setActiveEntryMode("paste");
+    setWorkspace(null);
+    setEditorFlowMode("review");
+    setGuidedSourceContentDocument(null);
+    setGuidedRefinementHint(null);
+    setIntakeFollowUpQuestion(null);
+    setActiveEducationId(null);
+    setActiveExperienceId(null);
+    setShowStarterTemplateOptions(false);
+    setStarterExportLockSignature(null);
+    resetEditorState();
+    setStatusMessage(null);
+    setStage("paste");
+    void clearWorkspace();
   };
 
   const handleStartStrengthening = async () => {
@@ -1984,6 +2079,10 @@ export function ResumeStudio() {
     editorFlowMode === "starter"
       ? "这里先给你 3 种版式，看哪种更顺眼；切换不会改动你的内容。"
       : "先把内容补顺，再看看哪种排版更清楚。切换版式不会改动你的内容。";
+  const pasteRecognitionSummary =
+    activeEntryMode === "paste" && workspace?.contentDocument
+      ? buildPasteRecognitionSummary(workspace.contentDocument)
+      : null;
   const guidedPreviewAnswers = guidedQuestion.apply(guidedAnswers, guidedDraftAnswer);
   const guidedPreviewWorkspace =
     stage === "guided"
@@ -2407,10 +2506,38 @@ export function ResumeStudio() {
                     <div>
                       <p className="block-kicker">第一版</p>
                       <h3>第一版简历已经出来了</h3>
+                    </div>
+                    <span className="block-status">第一版已就绪</span>
                   </div>
-                  <span className="block-status">第一版已就绪</span>
-                </div>
                   <p className="block-copy">{starterBlockCopy}</p>
+                  {pasteRecognitionSummary ? (
+                    <div className="starter-summary-card">
+                      <div className="starter-summary-heading">
+                        <div>
+                          <p className="block-kicker">识别结果</p>
+                          <h4>我先从原文里整理到这些</h4>
+                        </div>
+                        <button
+                          className="text-button"
+                          onClick={handleReturnToPasteSource}
+                          type="button"
+                        >
+                          返回修改原文
+                        </button>
+                      </div>
+                      <p className="starter-summary-copy">
+                        你先扫一眼；如果有识别错的，回到原文改一下再重新整理。
+                      </p>
+                      <dl className="starter-summary-grid">
+                        {pasteRecognitionSummary.map((item) => (
+                          <div className="starter-summary-item" key={item.label}>
+                            <dt>{item.label}</dt>
+                            <dd>{item.value}</dd>
+                          </div>
+                        ))}
+                      </dl>
+                    </div>
+                  ) : null}
                   <p className="inline-note">
                     这是第一版，建议先补 1 条关键信息，再决定要不要导出。
                   </p>

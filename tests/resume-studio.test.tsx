@@ -456,6 +456,70 @@ describe("ResumeStudio", () => {
     expect(screen.getByRole("button", { name: "预览简历" })).toBeInTheDocument();
   });
 
+  it("shows a paste recognition summary on the first-draft screen", async () => {
+    const user = userEvent.setup();
+    render(<ResumeStudio />);
+
+    await user.click(screen.getByRole("button", { name: "导入旧材料" }));
+    await user.type(
+      screen.getByLabelText("粘贴现有简历或自我介绍"),
+      [
+        "向金涛",
+        "目标岗位：招聘实习生",
+        "电话：18973111415",
+        "邮箱：3294182452@qq.com",
+        "所在地：深圳",
+        "教育：中南财经政法大学 人力资源管理 2022.09-2026.06",
+        "教育：中国政法大学 法律（非法学） 2026.09-2029.07",
+        "经历：微派网络科技有限公司 招聘实习生 2025.10-2026.02 支持运营、美术、技术等10余个岗位类型招聘，3个月推进13位候选人入职，招聘目标达成率87%。",
+      ].join("\n"),
+    );
+
+    await user.click(screen.getByRole("button", { name: "整理并起稿" }));
+
+    await screen.findByText("第一版简历已经出来了");
+    const summaryHeading = screen.getByText("我先从原文里整理到这些");
+    const summaryCard = summaryHeading.closest(".starter-summary-card") as HTMLElement;
+
+    expect(summaryCard).not.toBeNull();
+    expect(within(summaryCard).getByText("姓名")).toBeInTheDocument();
+    expect(within(summaryCard).getByText("向金涛")).toBeInTheDocument();
+    expect(within(summaryCard).getByText("目标岗位")).toBeInTheDocument();
+    expect(within(summaryCard).getByText("招聘实习生")).toBeInTheDocument();
+    expect(within(summaryCard).getByText("联系方式")).toBeInTheDocument();
+    expect(within(summaryCard).getByText("电话、邮箱、所在地")).toBeInTheDocument();
+    expect(within(summaryCard).getByText("教育经历")).toBeInTheDocument();
+    expect(within(summaryCard).getByText("已识别 1 段")).toBeInTheDocument();
+    expect(within(summaryCard).getByText("经历")).toBeInTheDocument();
+    expect(within(summaryCard).getByText("已识别 1 段实习")).toBeInTheDocument();
+    expect(within(summaryCard).getByRole("button", { name: "返回修改原文" })).toBeInTheDocument();
+  });
+
+  it("returns pasted users to the original source text without clearing it", async () => {
+    const user = userEvent.setup();
+    render(<ResumeStudio />);
+    const pastedSource = [
+      "向金涛",
+      "目标岗位：招聘实习生",
+      "电话：18973111415",
+      "邮箱：3294182452@qq.com",
+      "所在地：深圳",
+      "教育：中南财经政法大学 人力资源管理 2022.09-2026.06",
+      "经历：微派网络科技有限公司 招聘实习生 2025.10-2026.02 支持运营、美术、技术等10余个岗位类型招聘，3个月推进13位候选人入职，招聘目标达成率87%。",
+    ].join("\n");
+
+    await user.click(screen.getByRole("button", { name: "导入旧材料" }));
+    await user.type(screen.getByLabelText("粘贴现有简历或自我介绍"), pastedSource);
+    await user.click(screen.getByRole("button", { name: "整理并起稿" }));
+
+    await screen.findByText("第一版简历已经出来了");
+    await user.click(screen.getByRole("button", { name: "返回修改原文" }));
+
+    expect(screen.getByRole("heading", { name: "导入旧材料，先整理第一版" })).toBeInTheDocument();
+    expect(screen.getByLabelText("粘贴现有简历或自我介绍")).toHaveValue(pastedSource);
+    expect(screen.getByRole("button", { name: "整理并起稿" })).toBeEnabled();
+  });
+
   it("shows paste progress immediately and prevents duplicate submissions while extraction is running", async () => {
     const user = userEvent.setup();
     let resolveExtractRequest: ((response: Response) => void) | undefined;
