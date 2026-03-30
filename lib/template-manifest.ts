@@ -235,6 +235,10 @@ const inferTemplatePreviewHighlights = (manifest: TemplateManifestInput) => {
 
   if (manifest.sections.hero.variant === "classic-banner") {
     highlights.add("顶部标题更醒目");
+  } else if (manifest.sections.hero.variant === "split-meta-band") {
+    highlights.add("上下分区更清楚");
+  } else if (manifest.sections.hero.variant === "stacked-profile-card") {
+    highlights.add("档案卡更完整");
   } else if (manifest.sections.hero.variant === "centered-name-minimal") {
     highlights.add("抬头更轻更极简");
   } else {
@@ -243,26 +247,22 @@ const inferTemplatePreviewHighlights = (manifest: TemplateManifestInput) => {
 
   if (manifest.sections.experience.variant === "metric-first") {
     highlights.add("经历优先展示结果");
+  } else if (manifest.sections.experience.variant === "result-callout") {
+    highlights.add("结果摘要更醒目");
+  } else if (manifest.sections.experience.variant === "role-first") {
+    highlights.add("角色切换更清楚");
   } else if (manifest.sections.experience.variant === "compact-cards") {
     highlights.add("经历模块更利于快扫");
   } else {
     highlights.add("经历阅读节奏更稳定");
   }
 
-  if (manifest.theme.fontPair === "songti-sans") {
-    highlights.add("学院感更明显");
-  } else if (manifest.theme.fontPair === "humanist-sans") {
-    highlights.add("整体更现代利落");
-  } else {
-    highlights.add("正式感更强");
-  }
-
   if (manifest.compactionPolicy.density === "tight") {
-    highlights.add("更适合高信息密度");
+    highlights.add("版面更紧凑");
   } else if (manifest.compactionPolicy.density === "airy") {
-    highlights.add("留白更舒展");
+    highlights.add("版面更舒展");
   } else {
-    highlights.add("版面密度平衡");
+    highlights.add("版面更均衡");
   }
 
   return [...highlights].slice(0, 3);

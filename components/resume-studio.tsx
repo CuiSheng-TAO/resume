@@ -44,6 +44,7 @@ import {
   finalizeTemplateManifestCandidates,
   type TemplateManifest,
 } from "@/lib/template-manifest";
+import type { ExperienceVariant, HeroVariant } from "@/lib/template-types";
 import type {
   EducationAsset,
   ExperienceAsset,
@@ -589,13 +590,17 @@ const TEMPLATE_HERO_LABELS = {
   "classic-banner": "标题更醒目",
   "name-left-photo-right": "信息分布稳",
   "centered-name-minimal": "版头更轻简",
-} as const;
+  "split-meta-band": "上下分区更清楚",
+  "stacked-profile-card": "档案卡更完整",
+} as const satisfies Record<HeroVariant, string>;
 
 const TEMPLATE_EXPERIENCE_LABELS = {
   "stacked-bullets": "经历按条展开",
   "metric-first": "结果放得更前",
   "compact-cards": "经历更紧凑",
-} as const;
+  "role-first": "角色切换更清楚",
+  "result-callout": "结果摘要更醒目",
+} as const satisfies Record<ExperienceVariant, string>;
 
 const TEMPLATE_DENSITY_LABELS = {
   airy: "版面更舒展",
@@ -2736,11 +2741,12 @@ export function ResumeStudio() {
                         ]
                           .filter(Boolean)
                           .join("。");
+                        const descriptionId = `template-card-description-${manifest.templateId}`;
 
                         return (
                           <button
                             key={manifest.templateId}
-                            aria-description={accessibilityDescription}
+                            aria-describedby={descriptionId}
                             aria-label={manifest.displayName}
                             aria-pressed={workspace.templateSession?.selectedTemplateId === manifest.templateId}
                             className={
@@ -2751,6 +2757,9 @@ export function ResumeStudio() {
                             onClick={() => handleTemplateSwitch(manifest.templateId)}
                             type="button"
                           >
+                            <span className="sr-only" id={descriptionId}>
+                              {accessibilityDescription}
+                            </span>
                             <span className="template-card-family">{manifest.familyLabel}</span>
                             <span className="template-card-name">{manifest.displayName}</span>
                             <span className="template-card-description">{manifest.description}</span>

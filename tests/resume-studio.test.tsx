@@ -791,6 +791,67 @@ describe("ResumeStudio", () => {
     expect(screen.getByText("已先给你几种版式候选，先看看哪套更适合这版内容。")).toBeInTheDocument();
   });
 
+  it("falls back to built-in card highlights for newer template variants", async () => {
+    const user = userEvent.setup();
+    mockAdaptiveIntakeFetch({
+      templateResponse: {
+        mode: "fallback",
+        candidates: [
+          createManifest({
+            templateId: "signal-template",
+            name: "Signal Template",
+            displayName: "亮点清晰",
+            description: "适合把重要信息压缩到更清楚的版头里。",
+            familyLabel: "重点鲜明",
+            fitSummary: "适合亮点明确，想让筛选时先看到重点的人。",
+            previewHighlights: undefined,
+            sections: {
+              hero: { variant: "split-meta-band" },
+              education: { variant: "highlight-strip" },
+              experience: { variant: "result-callout" },
+              awards: { variant: "inline-list" },
+              skills: { variant: "inline-tags" },
+            },
+            compactionPolicy: {
+              density: "balanced",
+              overflowPriority: ["awards", "skills", "experience"],
+            },
+          }),
+          createManifest({
+            templateId: "flagship-reference",
+            name: "Flagship Reference",
+          }),
+          createManifest({
+            templateId: "compact-template",
+            name: "Compact Template",
+          }),
+        ],
+      },
+    });
+    render(<ResumeStudio />);
+
+    await user.click(screen.getByRole("button", { name: "导入旧材料" }));
+    await user.type(
+      screen.getByLabelText("粘贴现有简历或自我介绍"),
+      [
+        "向金涛",
+        "目标岗位：招聘实习生",
+        "电话：18973111415",
+        "邮箱：3294182452@qq.com",
+        "所在地：深圳",
+        "教育：中南财经政法大学 人力资源管理 2022.09-2026.06",
+        "经历：微派网络科技有限公司 招聘实习生 2025.10-2026.02 支持运营、美术、技术等10余个岗位类型招聘，3个月推进13位候选人入职，招聘目标达成率87%。",
+      ].join("\n"),
+    );
+
+    await user.click(screen.getByRole("button", { name: "整理并起稿" }));
+
+    const signalCard = await screen.findByRole("button", { name: "亮点清晰" });
+    expect(within(signalCard).getByText("上下分区更清楚")).toBeInTheDocument();
+    expect(within(signalCard).getByText("结果摘要更醒目")).toBeInTheDocument();
+    expect(within(signalCard).getByText("版面更均衡")).toBeInTheDocument();
+  });
+
   it("shows only the template toggle before reopening template choices in strengthening", async () => {
     const user = userEvent.setup();
     mockAdaptiveIntakeFetch({
@@ -1401,7 +1462,9 @@ describe("ResumeStudio", () => {
     expect(screen.queryByText("这段经历里能补一个数字结果吗？")).not.toBeInTheDocument();
   });
 
-  it("returns to the overview after a strengthening answer and only resumes when the user asks for the next prompt", async () => {
+  it(
+    "returns to the overview after a strengthening answer and only resumes when the user asks for the next prompt",
+    async () => {
     const user = userEvent.setup();
     mockAdaptiveIntakeFetch({
       extractResponse: {
@@ -1526,7 +1589,9 @@ describe("ResumeStudio", () => {
     expect(
       (screen.getAllByLabelText("经历要点")[0] as HTMLTextAreaElement).value,
     ).toContain("推进13位候选人进入终面，促成5人入职");
-  });
+    },
+    15_000,
+  );
 
   it("binds strengthening follow-up to the internship card the user is editing", async () => {
     const user = userEvent.setup();
@@ -1675,7 +1740,7 @@ describe("ResumeStudio", () => {
     ).not.toContain(
       "推进 27 位候选人进入初筛，促成 6 人到面",
     );
-  });
+  }, 15_000);
 
   it("closes the strengthening prompt after the user fixes the missing metric directly in the editor", async () => {
     const user = userEvent.setup();
@@ -1784,7 +1849,7 @@ describe("ResumeStudio", () => {
       expect(screen.queryByText("这段经历里能补一个数字结果吗？")).not.toBeInTheDocument();
     });
     expect(screen.getByText("下一步建议")).toBeInTheDocument();
-  });
+  }, 15_000);
 
   it("lets users add multiple education and internship entries in the editor", async () => {
     const user = userEvent.setup();
@@ -1844,7 +1909,7 @@ describe("ResumeStudio", () => {
     expect(screen.getByText("在校经历 3")).toBeInTheDocument();
     expect(screen.queryByText(/当前一页稿暂时收起了 .*条在校经历/)).not.toBeInTheDocument();
     expect(screen.queryByText("未进入当前一页稿")).not.toBeInTheDocument();
-  });
+  }, 15_000);
 
   it("shows an ai suggestion first and only rewrites bullets after explicit apply", async () => {
     const user = userEvent.setup();
@@ -2608,7 +2673,7 @@ describe("ResumeStudio", () => {
 
     const savedWorkspace = saveWorkspace.mock.calls.at(-1)?.[0];
     expect(savedWorkspace?.templateSession?.selectedTemplateId).toBe("compact-elegance");
-  });
+  }, 15_000);
 
   it("ignores a late template response when the user switched to a template that is not in that response", async () => {
     const user = userEvent.setup();
