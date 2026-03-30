@@ -164,10 +164,10 @@ const BASELINE_TEMPLATE_COPY = {
 } as const satisfies Record<string, { displayName: string; description: string }>;
 
 const TEMPLATE_FAMILY_LABELS: Record<TemplateFamilyId, string> = {
-  "warm-professional": "温和专业",
-  "calm-academic": "沉静学院",
-  "modern-clean": "现代简洁",
-  "highlight-forward": "亮点前置",
+  "warm-professional": "温暖专业",
+  "calm-academic": "冷静学术",
+  "modern-clean": "现代清爽",
+  "highlight-forward": "重点鲜明",
 };
 
 const curatedTemplateManifestById = new Map(

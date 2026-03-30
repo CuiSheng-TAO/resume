@@ -101,7 +101,7 @@ describe("template manifest", () => {
     expect(result.data).toMatchObject({
       displayName: "稳妥简洁",
       familyId: "calm-academic",
-      familyLabel: "沉静学院",
+      familyLabel: "冷静学术",
     });
     expect(result.data?.description).toBeTruthy();
     expect(result.data?.fitSummary).toBeTruthy();
@@ -114,7 +114,7 @@ describe("template manifest", () => {
         displayName: "自定义标题",
         description: "自定义描述",
         familyId: "modern-clean",
-        familyLabel: "现代简洁",
+        familyLabel: "现代清爽",
         fitSummary: "适合想自定义卡片文案的模板。",
         previewHighlights: ["自定义亮点 A", "自定义亮点 B"],
       }),
@@ -125,7 +125,7 @@ describe("template manifest", () => {
       displayName: "自定义标题",
       description: "自定义描述",
       familyId: "modern-clean",
-      familyLabel: "现代简洁",
+      familyLabel: "现代清爽",
       fitSummary: "适合想自定义卡片文案的模板。",
       previewHighlights: ["自定义亮点 A", "自定义亮点 B"],
     });
@@ -232,7 +232,7 @@ describe("template manifest", () => {
       displayName: "稳妥简洁",
       description: "信息排布最稳，适合大多数校招简历。",
       familyId: "warm-professional",
-      familyLabel: "温和专业",
+      familyLabel: "温暖专业",
       fitSummary: TEMPLATE_FAMILY_LIBRARY.find((manifest) => manifest.templateId === "flagship-reference")
         ?.fitSummary,
       previewHighlights: TEMPLATE_FAMILY_LIBRARY.find(
@@ -266,7 +266,7 @@ describe("template manifest", () => {
         displayName: "候选卡片名",
         description: "候选卡片描述",
         familyId: "modern-clean",
-        familyLabel: "现代简洁",
+        familyLabel: "现代清爽",
         fitSummary: "适合在 session 归一化后仍然保留完整卡片文案。",
         previewHighlights: ["亮点一", "亮点二"],
       },
@@ -278,10 +278,24 @@ describe("template manifest", () => {
       displayName: "候选卡片名",
       description: "候选卡片描述",
       familyId: "modern-clean",
-      familyLabel: "现代简洁",
+      familyLabel: "现代清爽",
       fitSummary: "适合在 session 归一化后仍然保留完整卡片文案。",
       previewHighlights: ["亮点一", "亮点二"],
     });
+  });
+
+  it("keeps baseline manifests as a fixed fallback-only subset of the curated library", () => {
+    expect(BASELINE_TEMPLATE_ID_ORDER).toEqual([
+      "flagship-reference",
+      "compact-elegance",
+      "classic-banner",
+    ]);
+    expect(BASELINE_TEMPLATE_MANIFESTS).toHaveLength(3);
+    expect(
+      BASELINE_TEMPLATE_MANIFESTS.every((manifest) =>
+        TEMPLATE_FAMILY_LIBRARY.some((template) => template.templateId === manifest.templateId),
+      ),
+    ).toBe(true);
   });
 
   it("falls back to the baseline manifest when the selected template is unknown", () => {
