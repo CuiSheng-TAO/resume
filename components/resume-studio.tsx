@@ -2727,32 +2727,44 @@ export function ResumeStudio() {
                   ) : null}
                   {shouldShowTemplateButtons ? (
                     <div className="template-card-grid">
-                      {(workspace.templateSession?.candidateManifests ?? []).map((manifest) => (
-                        <button
-                          key={manifest.templateId}
-                          aria-label={manifest.displayName}
-                          aria-pressed={workspace.templateSession?.selectedTemplateId === manifest.templateId}
-                          className={
-                            workspace.templateSession?.selectedTemplateId === manifest.templateId
-                              ? "template-card template-card-selected"
-                              : "template-card"
-                          }
-                          onClick={() => handleTemplateSwitch(manifest.templateId)}
-                          type="button"
-                        >
-                          <span className="template-card-family">{manifest.familyLabel}</span>
-                          <span className="template-card-name">{manifest.displayName}</span>
-                          <span className="template-card-description">{manifest.description}</span>
-                          <span className="template-card-fit">{manifest.fitSummary}</span>
-                          <span className="template-card-tags">
-                            {buildTemplateCardHighlights(manifest).map((highlight) => (
-                              <span className="template-card-tag" key={`${manifest.templateId}-${highlight}`}>
-                                {highlight}
-                              </span>
-                            ))}
-                          </span>
-                        </button>
-                      ))}
+                      {(workspace.templateSession?.candidateManifests ?? []).map((manifest) => {
+                        const cardHighlights = buildTemplateCardHighlights(manifest);
+                        const accessibilityDescription = [
+                          manifest.familyLabel,
+                          manifest.fitSummary,
+                          cardHighlights.join("，"),
+                        ]
+                          .filter(Boolean)
+                          .join("。");
+
+                        return (
+                          <button
+                            key={manifest.templateId}
+                            aria-description={accessibilityDescription}
+                            aria-label={manifest.displayName}
+                            aria-pressed={workspace.templateSession?.selectedTemplateId === manifest.templateId}
+                            className={
+                              workspace.templateSession?.selectedTemplateId === manifest.templateId
+                                ? "template-card template-card-selected"
+                                : "template-card"
+                            }
+                            onClick={() => handleTemplateSwitch(manifest.templateId)}
+                            type="button"
+                          >
+                            <span className="template-card-family">{manifest.familyLabel}</span>
+                            <span className="template-card-name">{manifest.displayName}</span>
+                            <span className="template-card-description">{manifest.description}</span>
+                            <span className="template-card-fit">{manifest.fitSummary}</span>
+                            <span className="template-card-tags">
+                              {cardHighlights.map((highlight) => (
+                                <span className="template-card-tag" key={`${manifest.templateId}-${highlight}`}>
+                                  {highlight}
+                                </span>
+                              ))}
+                            </span>
+                          </button>
+                        );
+                      })}
                     </div>
                   ) : null}
                 </section>

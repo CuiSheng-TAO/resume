@@ -770,6 +770,12 @@ describe("ResumeStudio", () => {
     expect(within(templateBlock).getAllByRole("button")).toHaveLength(3);
 
     const flagshipCard = within(templateBlock).getByRole("button", { name: /稳妥简洁/ });
+    expect(flagshipCard).toHaveAccessibleName("稳妥简洁");
+    expect(flagshipCard).toHaveAccessibleDescription(/温暖专业/);
+    expect(flagshipCard).toHaveAccessibleDescription(
+      /适合想先交出一版稳妥、可信、不过度冒险的校招简历。/,
+    );
+    expect(flagshipCard).toHaveAccessibleDescription(/抬头信息完整清楚/);
     expect(flagshipCard).toHaveAttribute("aria-pressed", "true");
     expect(within(flagshipCard).getByText("温暖专业")).toBeInTheDocument();
     expect(within(flagshipCard).getByText("稳妥简洁")).toBeInTheDocument();
@@ -806,6 +812,9 @@ describe("ResumeStudio", () => {
             name: "Flagship Reference",
             displayName: "稳妥简洁",
             description: "信息排布最稳，适合大多数校招简历。",
+            familyLabel: "温暖专业",
+            fitSummary: "适合想先交出一版稳妥、可信、不过度冒险的校招简历。",
+            previewHighlights: ["抬头信息完整清楚", "教育与经历层次稳定", "整体观感正式克制"],
           }),
           createManifest({
             templateId: "compact-template",
@@ -892,8 +901,15 @@ describe("ResumeStudio", () => {
       .closest(".studio-block") as HTMLElement;
 
     expect(templateBlock).not.toBeNull();
+    const reopenedFlagshipCard = within(templateBlock).getByRole("button", { name: /稳妥简洁/ });
+
     expect(screen.getByRole("button", { name: "紧凑清晰" })).toBeInTheDocument();
     expect(within(templateBlock).getByText("3 套候选")).toBeInTheDocument();
+    expect(within(reopenedFlagshipCard).getByText("温暖专业")).toBeInTheDocument();
+    expect(
+      within(reopenedFlagshipCard).getByText("适合想先交出一版稳妥、可信、不过度冒险的校招简历。"),
+    ).toBeInTheDocument();
+    expect(within(reopenedFlagshipCard).getByText("抬头信息完整清楚")).toBeInTheDocument();
   });
 
   it("refreshes template candidates after editor content changes", async () => {
