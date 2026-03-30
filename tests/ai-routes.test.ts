@@ -481,6 +481,29 @@ describe("AI routes", () => {
     );
   });
 
+  it("uses a short no-retry ai budget for extract-content requests", async () => {
+    process.env.ANTHROPIC_API_KEY = "test-key";
+    process.env.ANTHROPIC_MODEL = "claude-test";
+    const anthropicSpy = vi.spyOn(anthropicModule, "requestAnthropicJson").mockResolvedValue({
+      data: {
+        contentDocument: createContentDocument(),
+      },
+      attempts: 1,
+    });
+
+    const response = await extractContentPost(createExtractRequest());
+    const payload = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(payload.mode).toBe("anthropic");
+    expect(anthropicSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        timeoutMs: 3000,
+        maxRetries: 0,
+      }),
+    );
+  });
+
   it("returns no follow-up when local fallback sees no remaining weak areas", async () => {
     const response = await interviewNextPost(createStrongInterviewNextRequest());
     const payload = await response.json();

@@ -138,7 +138,9 @@ export async function POST(request: Request) {
   try {
     const result = await requestAnthropicJson({
       maxTokens: 1200,
+      maxRetries: 0,
       system: AI_PROMPTS.extractContent.system,
+      timeoutMs: 3000,
       userContent: [`入口模式：${parsed.data.entryMode}`, "请只输出 JSON。", parsed.data.text].join("\n"),
       schema: responseSchema,
     });

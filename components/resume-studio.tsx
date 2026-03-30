@@ -19,6 +19,7 @@ import {
 import { exportResumeHtml, printToPdf } from "@/lib/export";
 import {
   assessIntakeProgress,
+  listMissingCoreAreas,
   type IntakeQuestionFocus,
   type IntakeProgress,
   type IntakeQuestionPlan,
@@ -812,6 +813,7 @@ export function ResumeStudio() {
   const [templateCandidateState, setTemplateCandidateState] =
     useState<TemplateCandidateState | null>(null);
   const [pasteText, setPasteText] = useState("");
+  const [isPasteGenerating, setIsPasteGenerating] = useState(false);
   const [activeEntryMode, setActiveEntryMode] = useState<"guided" | "paste">("guided");
   const [guidedSourceContentDocument, setGuidedSourceContentDocument] =
     useState<ResumeContentDocument | null>(null);
@@ -1293,6 +1295,7 @@ export function ResumeStudio() {
 
   const handleEnterGuided = () => {
     initialRestoreLockedRef.current = true;
+    setIsPasteGenerating(false);
     setTemplateCandidateState(null);
     setActiveEntryMode("guided");
     setEditorFlowMode("review");
@@ -1313,6 +1316,7 @@ export function ResumeStudio() {
 
   const handleEnterPaste = () => {
     initialRestoreLockedRef.current = true;
+    setIsPasteGenerating(false);
     setTemplateCandidateState(null);
     setEditorFlowMode("review");
     setActiveEducationId(null);
@@ -1358,7 +1362,7 @@ export function ResumeStudio() {
     setStatusMessage("先整体看一眼这版；如果还想继续补，再点“继续补下一条”。");
   };
 
-  const handleGuidedNext = async () => {
+  const handleGuidedNext = () => {
     const committedAnswers = guidedQuestion.apply(guidedAnswers, guidedDraftAnswer);
     setGuidedAnswers(committedAnswers);
 
@@ -1398,17 +1402,12 @@ export function ResumeStudio() {
       return;
     }
 
-    const nextQuestion = await requestInterviewQuestion(contentDocument, false);
-    const nextFocus = nextQuestion?.focus as GuidedCoreFocus | undefined;
-
-    if (nextFocus && nextFocus in GUIDED_QUESTION_MAP) {
+    const nextFocus = (listMissingCoreAreas(contentDocument)[0] ??
+      GUIDED_CORE_ORDER.find((focus) => !guidedQuestionOrder.includes(focus))) as
+      | GuidedCoreFocus
+      | undefined;
+    if (nextFocus) {
       moveToGuidedQuestion(nextFocus, committedAnswers);
-      return;
-    }
-
-    const fallbackFocus = GUIDED_CORE_ORDER.find((focus) => !guidedQuestionOrder.includes(focus));
-    if (fallbackFocus) {
-      moveToGuidedQuestion(fallbackFocus, committedAnswers);
     }
   };
 
@@ -1431,58 +1430,61 @@ export function ResumeStudio() {
   };
 
   const handleGenerateFromPaste = async () => {
-    const { contentDocument, intake } = await requestExtractedContent(pasteText);
-    setActiveEntryMode("paste");
-
-    if (!intake.minimumDraftReady) {
-      const nextQuestion = await requestInterviewQuestion(contentDocument, false);
-      const nextFocus = nextQuestion?.focus as GuidedCoreFocus | undefined;
-      const nextGuidedAnswers = buildGuidedAnswersFromContentDocument(contentDocument);
-      setWorkspace(null);
-      setIntakeFollowUpQuestion(null);
-      setGuidedSourceContentDocument(contentDocument);
-      setGuidedAnswers(nextGuidedAnswers);
-      setGuidedQuestionOrder([
-        nextFocus && nextFocus in GUIDED_QUESTION_MAP ? nextFocus : GUIDED_CORE_ORDER[0],
-      ]);
-      setGuidedStepIndex(0);
-      setGuidedDraftAnswer(
-        (nextFocus && nextFocus in GUIDED_QUESTION_MAP
-          ? GUIDED_QUESTION_MAP[nextFocus]
-          : GUIDED_QUESTION_MAP[GUIDED_CORE_ORDER[0]]
-        ).getValue(nextGuidedAnswers),
-      );
-      setGuidedRefinementHint(null);
-      setStarterExportLockSignature(null);
-      resetEditorState();
-      setStage("guided");
-      setStatusMessage("已先抽取可用信息，继续补齐后再整理骨架。");
+    if (!pasteText.trim() || isPasteGenerating) {
       return;
     }
 
-    const next = createWorkspaceFromContentDocument(contentDocument);
-    const nextProgress = assessIntakeProgress(contentDocument, { hasDraft: true });
-    setWorkspace(next);
-    setTemplateCandidateState({
-      mode: "baseline",
-    });
-    setIntakeFollowUpQuestion(null);
-    setEditorFlowMode(nextProgress.weakAreas.length > 0 ? "starter" : "review");
-    setStarterExportLockSignature(
-      nextProgress.weakAreas.length > 0
-        ? createTemplateCandidateRefreshSignature(contentDocument)
-        : null,
-    );
-    scheduleTemplateCandidateRefresh(contentDocument, next.templateSession?.selectedTemplateId);
-    setGuidedRefinementHint(null);
-    resetEditorState();
-    setStage("editor");
+    setIsPasteGenerating(true);
+
+    try {
+      const { contentDocument, intake } = await requestExtractedContent(pasteText);
+      setActiveEntryMode("paste");
+
+      if (!intake.minimumDraftReady) {
+        const nextFocus = (listMissingCoreAreas(contentDocument)[0] ??
+          GUIDED_CORE_ORDER[0]) as GuidedCoreFocus;
+        const nextGuidedAnswers = buildGuidedAnswersFromContentDocument(contentDocument);
+        setWorkspace(null);
+        setIntakeFollowUpQuestion(null);
+        setGuidedSourceContentDocument(contentDocument);
+        setGuidedAnswers(nextGuidedAnswers);
+        setGuidedQuestionOrder([nextFocus]);
+        setGuidedStepIndex(0);
+        setGuidedDraftAnswer(GUIDED_QUESTION_MAP[nextFocus].getValue(nextGuidedAnswers));
+        setGuidedRefinementHint(null);
+        setStarterExportLockSignature(null);
+        resetEditorState();
+        setStage("guided");
+        setStatusMessage("已先抽取可用信息，继续补齐后再整理骨架。");
+        return;
+      }
+
+      const next = createWorkspaceFromContentDocument(contentDocument);
+      const nextProgress = assessIntakeProgress(contentDocument, { hasDraft: true });
+      setWorkspace(next);
+      setTemplateCandidateState({
+        mode: "baseline",
+      });
+      setIntakeFollowUpQuestion(null);
+      setEditorFlowMode(nextProgress.weakAreas.length > 0 ? "starter" : "review");
+      setStarterExportLockSignature(
+        nextProgress.weakAreas.length > 0
+          ? createTemplateCandidateRefreshSignature(contentDocument)
+          : null,
+      );
+      scheduleTemplateCandidateRefresh(contentDocument, next.templateSession?.selectedTemplateId);
+      setGuidedRefinementHint(null);
+      resetEditorState();
+      setStage("editor");
       setStatusMessage("已从现有材料整理出第一版简历。");
-    void trackEvent("draft_created", {
-      entryMode: "paste",
-      density: next.layoutPlan.density,
-      hiddenExperienceIds: next.layoutPlan.hiddenExperienceIds,
-    });
+      void trackEvent("draft_created", {
+        entryMode: "paste",
+        density: next.layoutPlan.density,
+        hiddenExperienceIds: next.layoutPlan.hiddenExperienceIds,
+      });
+    } finally {
+      setIsPasteGenerating(false);
+    }
   };
 
   const applyFollowUpAnswerToWorkspace = (
@@ -2314,6 +2316,7 @@ export function ResumeStudio() {
                 <span>粘贴现有简历或自我介绍</span>
                 <textarea
                   aria-label="粘贴现有简历或自我介绍"
+                  disabled={isPasteGenerating}
                   onChange={(event) => setPasteText(event.target.value)}
                   placeholder="把旧简历、自我介绍或项目经历贴进来，我们先整理出第一版，再带你继续完善。"
                   rows={11}
@@ -2323,13 +2326,18 @@ export function ResumeStudio() {
               <div className="entry-actions">
                 <button
                   className="primary-button"
-                  disabled={!pasteText.trim()}
+                  disabled={!pasteText.trim() || isPasteGenerating}
                   onClick={handleGenerateFromPaste}
                   type="button"
                 >
-                  整理并起稿
+                  {isPasteGenerating ? "整理中..." : "整理并起稿"}
                 </button>
-                <button className="text-button" onClick={() => setStage("landing")} type="button">
+                <button
+                  className="text-button"
+                  disabled={isPasteGenerating}
+                  onClick={() => setStage("landing")}
+                  type="button"
+                >
                   返回
                 </button>
               </div>

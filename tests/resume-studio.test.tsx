@@ -144,35 +144,26 @@ describe("ResumeStudio", () => {
     expect(screen.getByText("你最想投的岗位是什么？")).toBeInTheDocument();
   });
 
-  it("does not keep inflating the guided step count when the next-question planner repeats the same focus", async () => {
+  it("advances guided core questions locally without waiting for the remote planner", async () => {
     const user = userEvent.setup();
-    mockAdaptiveIntakeFetch({
-      interviewResponses: [
-        {
-          mode: "fallback",
-          stage: "core-follow-up",
-          focus: "target-role",
-          question: "你最想投的岗位是什么？",
-          reason: "先锁定目标岗位。",
-          suggestion: "先写一个方向。",
-        },
-        {
-          mode: "fallback",
-          stage: "core-follow-up",
-          focus: "target-role",
-          question: "你最想投的岗位是什么？",
-          reason: "先锁定目标岗位。",
-          suggestion: "先写一个方向。",
-        },
-        {
-          mode: "fallback",
-          stage: "core-follow-up",
-          focus: "target-role",
-          question: "你最想投的岗位是什么？",
-          reason: "先锁定目标岗位。",
-          suggestion: "先写一个方向。",
-        },
-      ],
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+      const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
+
+      if (url.includes("/api/ai/interview-next")) {
+        return new Promise<Response>(() => {});
+      }
+
+      if (url.includes("/api/events")) {
+        return new Response(JSON.stringify({ ok: true }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+
+      return new Response(JSON.stringify({ ok: true }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
     });
     render(<ResumeStudio />);
 
@@ -182,19 +173,13 @@ describe("ResumeStudio", () => {
 
     await screen.findByText("你最想投的岗位是什么？");
     expect(screen.getByText("第 2 题")).toBeInTheDocument();
-
-    await user.type(screen.getByLabelText("当前回答"), "招聘运营实习生");
-    await user.click(screen.getByRole("button", { name: "下一题" }));
-
-    expect(screen.getByText("你最想投的岗位是什么？")).toBeInTheDocument();
-    expect(screen.getByText("第 2 题")).toBeInTheDocument();
-    expect(screen.getByText("这一项还需要更具体一点，先把目标岗位写准。")).toBeInTheDocument();
-
-    await user.click(screen.getByRole("button", { name: "下一题" }));
-
-    expect(screen.getByText("你最想投的岗位是什么？")).toBeInTheDocument();
-    expect(screen.getByText("第 2 题")).toBeInTheDocument();
-    expect(screen.queryByText("第 3 题")).not.toBeInTheDocument();
+    expect(
+      fetchSpy.mock.calls.filter(([input]) => {
+        const url =
+          typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
+        return url.includes("/api/ai/interview-next");
+      }),
+    ).toHaveLength(0);
   });
 
   it("keeps the guided flow active if a persisted workspace finishes loading after the user already entered it", async () => {
@@ -469,6 +454,156 @@ describe("ResumeStudio", () => {
     expect(within(previewRail as HTMLElement).getByText("第一版预览")).toBeInTheDocument();
     expect((previewRail as HTMLElement).querySelector(".entry-actions.stacked")).toBeNull();
     expect(screen.getByRole("button", { name: "预览简历" })).toBeInTheDocument();
+  });
+
+  it("shows paste progress immediately and prevents duplicate submissions while extraction is running", async () => {
+    const user = userEvent.setup();
+    let resolveExtractRequest: ((response: Response) => void) | undefined;
+    const extractRequest = new Promise<Response>((resolve) => {
+      resolveExtractRequest = resolve;
+    });
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+      const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
+
+      if (url.includes("/api/ai/extract-content")) {
+        return extractRequest;
+      }
+
+      if (url.includes("/api/ai/generate-templates")) {
+        return new Response(
+          JSON.stringify({
+            mode: "fallback",
+            candidates: BASELINE_TEMPLATE_MANIFESTS,
+          }),
+          {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          },
+        );
+      }
+
+      if (url.includes("/api/events")) {
+        return new Response(JSON.stringify({ ok: true }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+
+      return new Response(JSON.stringify({ ok: true }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    });
+
+    render(<ResumeStudio />);
+
+    await user.click(screen.getByRole("button", { name: "导入旧材料" }));
+    await user.type(
+      screen.getByLabelText("粘贴现有简历或自我介绍"),
+      [
+        "陈星野",
+        "目标岗位：招聘运营实习生",
+        "电话：13800001234",
+        "邮箱：chenxingye@example.com",
+        "所在地：杭州",
+        "教育：华东师范大学 人力资源管理 2022.09-2026.06",
+        "经历：星桥科技 招聘运营实习生 2025.10-2026.02 支持多个岗位招聘推进，协助安排面试并跟进候选人流程。",
+      ].join("\n"),
+    );
+
+    await user.click(screen.getByRole("button", { name: "整理并起稿" }));
+
+    expect(screen.getByRole("button", { name: "整理中..." })).toBeDisabled();
+    expect(screen.getByLabelText("粘贴现有简历或自我介绍")).toBeDisabled();
+    expect(
+      fetchSpy.mock.calls.filter(([input]) => {
+        const url =
+          typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
+        return url.includes("/api/ai/extract-content");
+      }),
+    ).toHaveLength(1);
+
+    resolveExtractRequest?.(
+      new Response(
+        JSON.stringify({
+          mode: "fallback",
+          contentDocument: {
+            profile: {
+              fullName: "陈星野",
+              targetRole: "招聘运营实习生",
+              phone: "13800001234",
+              email: "chenxingye@example.com",
+              location: "杭州",
+              summary: "面向招聘运营方向。",
+              preferredLocation: "杭州",
+              photo: null,
+            },
+            education: [
+              {
+                id: "edu-1",
+                school: "华东师范大学",
+                degree: "人力资源管理",
+                dateRange: "2022.09-2026.06",
+                highlights: [],
+              },
+            ],
+            experiences: [
+              {
+                id: "exp-1",
+                section: "internship",
+                organization: "星桥科技",
+                role: "招聘运营实习生",
+                dateRange: "2025.10-2026.02",
+                priority: 100,
+                locked: true,
+                rawNarrative: "支持多个岗位招聘推进，协助安排面试并跟进候选人流程。",
+                bullets: ["支持多个岗位招聘推进，协助安排面试并跟进候选人流程。"],
+                metrics: [],
+                tags: ["招聘运营实习生"],
+                variants: {
+                  raw: "支持多个岗位招聘推进，协助安排面试并跟进候选人流程。",
+                  star: "支持多个岗位招聘推进，协助安排面试并跟进候选人流程。",
+                  standard: "支持多个岗位招聘推进，协助安排面试并跟进候选人流程。",
+                  compact: "支持多个岗位招聘推进，协助安排面试并跟进候选人流程。",
+                },
+              },
+            ],
+            awards: [],
+            skills: ["沟通能力", "执行力"],
+            intake: {
+              mode: "paste",
+              turns: [],
+            },
+            meta: {
+              language: "zh-CN",
+              targetAudience: "campus-recruiting",
+              completeness: "baseline",
+              evidenceStrength: "mixed",
+            },
+          },
+          intake: {
+            stage: "early-draft",
+            completenessScore: 1,
+            evidenceScore: 0,
+            minimumDraftReady: true,
+            weakAreas: ["experience-metrics", "skills-specificity", "education-signals"],
+          },
+        }),
+        {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        },
+      ),
+    );
+
+    await screen.findByText("第一版简历已经出来了");
+    expect(
+      fetchSpy.mock.calls.filter(([input]) => {
+        const url =
+          typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
+        return url.includes("/api/ai/extract-content");
+      }),
+    ).toHaveLength(1);
   });
 
   it("shows starter template candidates by default with user-facing labels", async () => {
