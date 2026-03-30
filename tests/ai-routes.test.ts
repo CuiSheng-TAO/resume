@@ -601,6 +601,26 @@ describe("AI routes", () => {
     );
   });
 
+  it("returns a stable fallback response when experiences contain partial items", async () => {
+    const response = await generateTemplatesPost(
+      createGenerateTemplatesRequest("5.5.5.6a", {
+        contentDocument: {
+          profile: {},
+          experiences: [{}],
+        },
+      }),
+    );
+    const payload = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(payload.mode).toBe("fallback");
+    expect(payload.candidates).toHaveLength(3);
+    expect(payload.candidates.every((manifest: TemplateManifest) => manifest.templateId)).toBe(true);
+    expect(payload.candidates.every((manifest: TemplateManifest) => manifest.familyLabel && manifest.fitSummary)).toBe(
+      true,
+    );
+  });
+
   it("falls back locally when ai returns the old template payload shape", async () => {
     process.env.ANTHROPIC_API_KEY = "test-key";
     process.env.ANTHROPIC_MODEL = "claude-test";

@@ -2,6 +2,10 @@ import type { ResumeContentDocument } from "@/lib/resume-document";
 import { TEMPLATE_FAMILY_LIBRARY } from "@/lib/template-library";
 import type { CuratedTemplateManifest } from "@/lib/template-types";
 
+type TemplateMatchingContentInput = Partial<ResumeContentDocument> & {
+  profile?: Partial<ResumeContentDocument["profile"]>;
+};
+
 type ContentFeatures = {
   educationCount: number;
   educationHighlightCount: number;
@@ -73,6 +77,108 @@ const countKeywordMatches = (text: string, keywords: readonly string[]) =>
   keywords.reduce((count, keyword) => count + (text.includes(keyword) ? 1 : 0), 0);
 
 const normalizeSignal = (value: string | undefined) => value?.trim().toLowerCase() ?? "";
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null;
+
+const normalizeContentDocument = (content: TemplateMatchingContentInput): ResumeContentDocument => {
+  const profile = isRecord(content.profile) ? content.profile : {};
+  const education = Array.isArray(content.education) ? content.education : [];
+  const experiences = Array.isArray(content.experiences) ? content.experiences : [];
+  const awards = Array.isArray(content.awards) ? content.awards : [];
+  const skills = Array.isArray(content.skills)
+    ? content.skills.filter((skill): skill is string => typeof skill === "string")
+    : [];
+
+  return {
+    profile: {
+      fullName: typeof profile.fullName === "string" ? profile.fullName : "",
+      targetRole: typeof profile.targetRole === "string" ? profile.targetRole : "",
+      phone: typeof profile.phone === "string" ? profile.phone : "",
+      email: typeof profile.email === "string" ? profile.email : "",
+      location: typeof profile.location === "string" ? profile.location : "",
+      summary: typeof profile.summary === "string" ? profile.summary : "",
+      preferredLocation:
+        typeof profile.preferredLocation === "string" ? profile.preferredLocation : undefined,
+      compactProfileNote:
+        typeof profile.compactProfileNote === "string" ? profile.compactProfileNote : undefined,
+      photo: null,
+    },
+    education: education
+      .filter(isRecord)
+      .map((item, index) => ({
+        id: typeof item.id === "string" ? item.id : `education-${index + 1}`,
+        school: typeof item.school === "string" ? item.school : "",
+        degree: typeof item.degree === "string" ? item.degree : "",
+        dateRange: typeof item.dateRange === "string" ? item.dateRange : "",
+        tag: typeof item.tag === "string" ? item.tag : undefined,
+        highlights: Array.isArray(item.highlights)
+          ? item.highlights.filter(isRecord).map((highlight) => ({
+              label: typeof highlight.label === "string" ? highlight.label : "",
+              value: typeof highlight.value === "string" ? highlight.value : "",
+            }))
+          : [],
+      })),
+    experiences: experiences
+      .filter(isRecord)
+      .map((item, index) => ({
+        id: typeof item.id === "string" ? item.id : `experience-${index + 1}`,
+        section: item.section === "campus" || item.section === "internship" ? item.section : undefined,
+        organization: typeof item.organization === "string" ? item.organization : "",
+        organizationNote: typeof item.organizationNote === "string" ? item.organizationNote : undefined,
+        role: typeof item.role === "string" ? item.role : "",
+        dateRange: typeof item.dateRange === "string" ? item.dateRange : "",
+        priority: typeof item.priority === "number" ? item.priority : 0,
+        locked: typeof item.locked === "boolean" ? item.locked : false,
+        rawNarrative: typeof item.rawNarrative === "string" ? item.rawNarrative : "",
+        bullets: Array.isArray(item.bullets)
+          ? item.bullets.filter((bullet): bullet is string => typeof bullet === "string")
+          : [],
+        linkUrl: typeof item.linkUrl === "string" ? item.linkUrl : undefined,
+        metrics: Array.isArray(item.metrics)
+          ? item.metrics.filter((metric): metric is string => typeof metric === "string")
+          : [],
+        tags: Array.isArray(item.tags)
+          ? item.tags.filter((tag): tag is string => typeof tag === "string")
+          : [],
+        variants: {
+          raw: isRecord(item.variants) && typeof item.variants.raw === "string" ? item.variants.raw : "",
+          star: isRecord(item.variants) && typeof item.variants.star === "string" ? item.variants.star : "",
+          standard:
+            isRecord(item.variants) && typeof item.variants.standard === "string"
+              ? item.variants.standard
+              : "",
+          compact:
+            isRecord(item.variants) && typeof item.variants.compact === "string"
+              ? item.variants.compact
+              : "",
+        },
+      })),
+    awards: awards
+      .filter(isRecord)
+      .map((item, index) => ({
+        id: typeof item.id === "string" ? item.id : `award-${index + 1}`,
+        title: typeof item.title === "string" ? item.title : "",
+        priority: typeof item.priority === "number" ? item.priority : 0,
+      })),
+    skills,
+    intake: {
+      mode: content.intake?.mode === "guided" ? "guided" : "paste",
+      turns: Array.isArray(content.intake?.turns)
+        ? content.intake.turns.filter(isRecord).map((turn, index) => ({
+            id: typeof turn.id === "string" ? turn.id : `turn-${index + 1}`,
+            speaker: turn.speaker === "assistant" ? "assistant" : "user",
+            content: typeof turn.content === "string" ? turn.content : "",
+          }))
+        : [],
+    },
+    meta: {
+      language: "zh-CN",
+      targetAudience: "campus-recruiting",
+      completeness: "baseline",
+      evidenceStrength: "mixed",
+    },
+  };
+};
 
 const collectContentText = (content: ResumeContentDocument) =>
   [
@@ -316,10 +422,10 @@ const scoreRoleSignals = (features: ContentFeatures, template: CuratedTemplateMa
 };
 
 export const scoreTemplateFit = (
-  content: ResumeContentDocument,
+  content: TemplateMatchingContentInput,
   template: CuratedTemplateManifest,
 ) => {
-  const features = extractContentFeatures(content);
+  const features = extractContentFeatures(normalizeContentDocument(content));
 
   return (
     scoreFamilyFit(features, template) +
@@ -331,7 +437,7 @@ export const scoreTemplateFit = (
 };
 
 export const shortlistTemplateLibrary = (
-  content: ResumeContentDocument,
+  content: TemplateMatchingContentInput,
   count = 6,
 ): CuratedTemplateManifest[] =>
   [...TEMPLATE_FAMILY_LIBRARY]
