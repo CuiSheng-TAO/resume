@@ -761,9 +761,9 @@ describe("ResumeStudio", () => {
 
     await user.click(screen.getByRole("button", { name: "整理并起稿" }));
 
-    await screen.findByRole("heading", { name: "挑一个顺眼的版式" });
+    await screen.findByRole("heading", { name: "看看哪套版式更适合这版简历" });
     const templateBlock = screen
-      .getByRole("heading", { name: "挑一个顺眼的版式" })
+      .getByRole("heading", { name: "看看哪套版式更适合这版简历" })
       .closest(".studio-block") as HTMLElement;
 
     expect(templateBlock).not.toBeNull();
@@ -782,10 +782,10 @@ describe("ResumeStudio", () => {
     expect(within(templateBlock).getByRole("button", { name: /紧凑清晰/ })).toBeInTheDocument();
     expect(within(templateBlock).getByRole("button", { name: /重点突出/ })).toBeInTheDocument();
     expect(screen.queryByText("Flagship Reference")).not.toBeInTheDocument();
-    expect(screen.getByText("已先给你几种版式候选，看着顺眼再切换。")).toBeInTheDocument();
+    expect(screen.getByText("已先给你几种版式候选，先看看哪套更适合这版内容。")).toBeInTheDocument();
   });
 
-  it("collapses template choices once the user enters strengthening", async () => {
+  it("shows only the template toggle before reopening template choices in strengthening", async () => {
     const user = userEvent.setup();
     mockAdaptiveIntakeFetch({
       interviewResponses: [
@@ -877,19 +877,23 @@ describe("ResumeStudio", () => {
     await user.click(screen.getByRole("button", { name: "继续完善这版" }));
 
     expect(await screen.findByText("这段经历里能补一个数字结果吗？")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "需要时再看版式" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "看看哪套版式更适合这版简历" })).not.toBeInTheDocument();
+    expect(screen.queryByText("3 套候选")).not.toBeInTheDocument();
+    expect(screen.queryByText("先把内容补顺，再看看哪种排版更清楚。切换版式不会改动你的内容。")).not.toBeInTheDocument();
+    expect(screen.queryByText("已先给你几种版式候选，先看看哪套更适合这版内容。")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /稳妥简洁/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /紧凑清晰/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /重点突出/ })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "需要时再看版式" }));
     const templateBlock = screen
-      .getByRole("heading", { name: "挑一个顺眼的版式" })
+      .getByRole("heading", { name: "看看哪套版式更适合这版简历" })
       .closest(".studio-block") as HTMLElement;
 
     expect(templateBlock).not.toBeNull();
-    expect(within(templateBlock).getAllByRole("button")).toHaveLength(1);
-    expect(within(templateBlock).getByRole("button", { name: "需要时再看版式" })).toBeInTheDocument();
-    expect(within(templateBlock).queryByRole("button", { name: /稳妥简洁/ })).not.toBeInTheDocument();
-    expect(within(templateBlock).queryByRole("button", { name: /紧凑清晰/ })).not.toBeInTheDocument();
-    expect(within(templateBlock).queryByRole("button", { name: /重点突出/ })).not.toBeInTheDocument();
-
-    await user.click(screen.getByRole("button", { name: "需要时再看版式" }));
     expect(screen.getByRole("button", { name: "紧凑清晰" })).toBeInTheDocument();
+    expect(within(templateBlock).getByText("3 套候选")).toBeInTheDocument();
   });
 
   it("refreshes template candidates after editor content changes", async () => {

@@ -2061,14 +2061,14 @@ export function ResumeStudio() {
 
   const templateCandidateNote =
     templateCandidateState?.mode === "anthropic"
-      ? "已根据当前内容整理出一组版式候选。"
+      ? "已根据当前内容整理出一组更贴近这版简历的版式候选。"
       : templateCandidateState?.mode === "loading"
-        ? "正在根据当前内容刷新版式候选；现在先看这一组。"
+        ? "正在根据当前内容刷新版式候选；现在先看这一组更贴近这版内容的方案。"
         : templateCandidateState?.mode === "fallback" ||
             templateCandidateState?.mode === "baseline"
-          ? "已先给你几种版式候选，看着顺眼再切换。"
+          ? "已先给你几种版式候选，先看看哪套更适合这版内容。"
           : templateCandidateState?.mode === "rate_limited"
-            ? templateCandidateState.message ?? "当前请求较多，先看这一组版式候选。"
+            ? templateCandidateState.message ?? "当前请求较多，先看这一组更贴近这版内容的版式候选。"
             : null;
 
   const exportBlocked = !workspace;
@@ -2081,7 +2081,7 @@ export function ResumeStudio() {
   const templateBlockCopy =
     editorFlowMode === "starter"
       ? "这里先给你 3 种版式，先看哪种更适合你的内容；切换不会改动你的内容。"
-      : "先把内容补顺，再看看哪种排版更清楚。切换版式不会改动你的内容。";
+      : "先把内容补顺；需要时再看看哪套版式更适合这版简历。切换版式不会改动你的内容。";
   const pasteRecognitionSummary =
     activeEntryMode === "paste" && workspace?.contentDocument
       ? buildPasteRecognitionSummary(workspace.contentDocument)
@@ -2245,6 +2245,8 @@ export function ResumeStudio() {
     editorFlowMode === "starter" || Boolean(starterExportLockSignature);
   const shouldShowStatusSection = editorFlowMode === "review" && !starterExportLockSignature;
   const shouldShowTemplateToggle = editorFlowMode === "strengthening";
+  const shouldShowCollapsedTemplateToggle =
+    editorFlowMode === "strengthening" && !showStarterTemplateOptions;
   const shouldShowTemplateButtons =
     editorFlowMode !== "strengthening" || showStarterTemplateOptions;
   const templateToggleLabel =
@@ -2682,65 +2684,79 @@ export function ResumeStudio() {
               </section>
               ) : null}
 
-              <section className="studio-block">
-                <div className="block-heading">
-                  <div>
-                    <p className="block-kicker">版式</p>
-                    <h3>挑一个顺眼的版式</h3>
-                  </div>
-                  <span className="block-status">
-                    {(workspace.templateSession?.candidateManifests ?? []).length} 套候选
-                  </span>
-                </div>
-                <p className="block-copy">{templateBlockCopy}</p>
-                {templateCandidateNote ? <p className="inline-note">{templateCandidateNote}</p> : null}
-                {templateCandidateState?.message && templateCandidateState.mode === "rate_limited" ? (
-                  <p className="inline-note">{templateCandidateState.message}</p>
-                ) : null}
-                {shouldShowTemplateToggle ? (
+              {shouldShowCollapsedTemplateToggle ? (
+                <section className="studio-block">
                   <div className="entry-actions">
                     <button
                       className="secondary-button"
-                      onClick={() =>
-                        setShowStarterTemplateOptions((current) => !current)
-                      }
+                      onClick={() => setShowStarterTemplateOptions(true)}
                       type="button"
                     >
                       {templateToggleLabel}
                     </button>
                   </div>
-                ) : null}
-                {shouldShowTemplateButtons ? (
-                  <div className="template-card-grid">
-                    {(workspace.templateSession?.candidateManifests ?? []).map((manifest) => (
+                </section>
+              ) : (
+                <section className="studio-block">
+                  <div className="block-heading">
+                    <div>
+                      <p className="block-kicker">版式</p>
+                      <h3>看看哪套版式更适合这版简历</h3>
+                    </div>
+                    <span className="block-status">
+                      {(workspace.templateSession?.candidateManifests ?? []).length} 套候选
+                    </span>
+                  </div>
+                  <p className="block-copy">{templateBlockCopy}</p>
+                  {templateCandidateNote ? <p className="inline-note">{templateCandidateNote}</p> : null}
+                  {templateCandidateState?.message && templateCandidateState.mode === "rate_limited" ? (
+                    <p className="inline-note">{templateCandidateState.message}</p>
+                  ) : null}
+                  {shouldShowTemplateToggle ? (
+                    <div className="entry-actions">
                       <button
-                        key={manifest.templateId}
-                        aria-label={manifest.displayName}
-                        aria-pressed={workspace.templateSession?.selectedTemplateId === manifest.templateId}
-                        className={
-                          workspace.templateSession?.selectedTemplateId === manifest.templateId
-                            ? "template-card template-card-selected"
-                            : "template-card"
+                        className="secondary-button"
+                        onClick={() =>
+                          setShowStarterTemplateOptions((current) => !current)
                         }
-                        onClick={() => handleTemplateSwitch(manifest.templateId)}
                         type="button"
                       >
-                        <span className="template-card-family">{manifest.familyLabel}</span>
-                        <span className="template-card-name">{manifest.displayName}</span>
-                        <span className="template-card-description">{manifest.description}</span>
-                        <span className="template-card-fit">{manifest.fitSummary}</span>
-                        <span className="template-card-tags">
-                          {buildTemplateCardHighlights(manifest).map((highlight) => (
-                            <span className="template-card-tag" key={`${manifest.templateId}-${highlight}`}>
-                              {highlight}
-                            </span>
-                          ))}
-                        </span>
+                        {templateToggleLabel}
                       </button>
-                    ))}
-                  </div>
-                ) : null}
-              </section>
+                    </div>
+                  ) : null}
+                  {shouldShowTemplateButtons ? (
+                    <div className="template-card-grid">
+                      {(workspace.templateSession?.candidateManifests ?? []).map((manifest) => (
+                        <button
+                          key={manifest.templateId}
+                          aria-label={manifest.displayName}
+                          aria-pressed={workspace.templateSession?.selectedTemplateId === manifest.templateId}
+                          className={
+                            workspace.templateSession?.selectedTemplateId === manifest.templateId
+                              ? "template-card template-card-selected"
+                              : "template-card"
+                          }
+                          onClick={() => handleTemplateSwitch(manifest.templateId)}
+                          type="button"
+                        >
+                          <span className="template-card-family">{manifest.familyLabel}</span>
+                          <span className="template-card-name">{manifest.displayName}</span>
+                          <span className="template-card-description">{manifest.description}</span>
+                          <span className="template-card-fit">{manifest.fitSummary}</span>
+                          <span className="template-card-tags">
+                            {buildTemplateCardHighlights(manifest).map((highlight) => (
+                              <span className="template-card-tag" key={`${manifest.templateId}-${highlight}`}>
+                                {highlight}
+                              </span>
+                            ))}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  ) : null}
+                </section>
+              )}
 
               {shouldShowStatusSection ? (
                 <section className="studio-block" ref={statusSectionRef}>
