@@ -609,11 +609,14 @@ const OVERFLOW_STATUS_LABELS = {
   "requires-trim": "需删减",
 } as const;
 
-const buildTemplateCardHighlights = (manifest: TemplateManifest) => [
-  TEMPLATE_HERO_LABELS[manifest.sections.hero.variant],
-  TEMPLATE_EXPERIENCE_LABELS[manifest.sections.experience.variant],
-  TEMPLATE_DENSITY_LABELS[manifest.compactionPolicy.density],
-];
+const buildTemplateCardHighlights = (manifest: TemplateManifest) =>
+  manifest.previewHighlights?.length
+    ? manifest.previewHighlights
+    : [
+        TEMPLATE_HERO_LABELS[manifest.sections.hero.variant],
+        TEMPLATE_EXPERIENCE_LABELS[manifest.sections.experience.variant],
+        TEMPLATE_DENSITY_LABELS[manifest.compactionPolicy.density],
+      ];
 
 const EDUCATION_HIGHLIGHT_FIELDS = [
   { label: "加权平均分", placeholder: "例如：93.11" },
@@ -2077,7 +2080,7 @@ export function ResumeStudio() {
       : "现在已经有第一版简历，可以继续完善。";
   const templateBlockCopy =
     editorFlowMode === "starter"
-      ? "这里先给你 3 种版式，看哪种更顺眼；切换不会改动你的内容。"
+      ? "这里先给你 3 种版式，先看哪种更适合你的内容；切换不会改动你的内容。"
       : "先把内容补顺，再看看哪种排版更清楚。切换版式不会改动你的内容。";
   const pasteRecognitionSummary =
     activeEntryMode === "paste" && workspace?.contentDocument
@@ -2722,8 +2725,10 @@ export function ResumeStudio() {
                         onClick={() => handleTemplateSwitch(manifest.templateId)}
                         type="button"
                       >
+                        <span className="template-card-family">{manifest.familyLabel}</span>
                         <span className="template-card-name">{manifest.displayName}</span>
                         <span className="template-card-description">{manifest.description}</span>
+                        <span className="template-card-fit">{manifest.fitSummary}</span>
                         <span className="template-card-tags">
                           {buildTemplateCardHighlights(manifest).map((highlight) => (
                             <span className="template-card-tag" key={`${manifest.templateId}-${highlight}`}>

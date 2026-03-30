@@ -270,7 +270,7 @@ button {
   gap: 10px;
   align-content: start;
   width: 100%;
-  min-height: 164px;
+  min-height: 228px;
   padding: 16px;
   border: 1px solid rgba(78, 93, 118, 0.14);
   border-radius: 22px;
@@ -306,9 +306,21 @@ button {
   letter-spacing: 0.03em;
 }
 
+.template-card-family {
+  color: rgba(64, 82, 110, 0.78);
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+}
+
 .template-card-description {
   color: var(--muted);
   font-size: 0.92rem;
+  line-height: 1.6;
+}
+
+.template-card-fit {
+  color: var(--ink);
+  font-size: 0.88rem;
   line-height: 1.6;
 }
 

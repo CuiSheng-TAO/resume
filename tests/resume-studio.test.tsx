@@ -22,6 +22,10 @@ const createManifest = (overrides: Partial<TemplateManifest> & Pick<TemplateMani
     name: overrides.name ?? overrides.templateId,
     displayName: overrides.displayName,
     description: overrides.description,
+    familyId: overrides.familyId,
+    familyLabel: overrides.familyLabel,
+    fitSummary: overrides.fitSummary,
+    previewHighlights: overrides.previewHighlights,
     tone: overrides.tone ?? "academic",
     page: {
       size: "A4",
@@ -670,7 +674,7 @@ describe("ResumeStudio", () => {
     ).toHaveLength(1);
   });
 
-  it("shows starter template candidates by default with user-facing labels", async () => {
+  it("shows three fuller starter template cards by default", async () => {
     const user = userEvent.setup();
     mockAdaptiveIntakeFetch({
       templateResponse: {
@@ -681,12 +685,18 @@ describe("ResumeStudio", () => {
             name: "Flagship Reference",
             displayName: "稳妥简洁",
             description: "信息排布最稳，适合大多数校招简历。",
+            familyLabel: "温暖专业",
+            fitSummary: "适合想先交出一版稳妥、可信、不过度冒险的校招简历。",
+            previewHighlights: ["抬头信息完整清楚", "教育与经历层次稳定", "整体观感正式克制"],
           }),
           createManifest({
             templateId: "compact-template",
             name: "Compact Template",
             displayName: "紧凑清晰",
             description: "内容更紧凑，适合信息稍多的一页简历。",
+            familyLabel: "现代清爽",
+            fitSummary: "适合经历和技能都偏多，需要在一页内提高版面利用率的人。",
+            previewHighlights: ["信息密度更高", "经历卡片更利于快扫", "整体感受利落清爽"],
             page: {
               size: "A4",
               marginPreset: "tight",
@@ -714,6 +724,9 @@ describe("ResumeStudio", () => {
             name: "Banner Template",
             displayName: "重点突出",
             description: "标题更醒目，适合把亮点放在上半页。",
+            familyLabel: "重点前置",
+            fitSummary: "适合已经有明确成果点，想在前几秒就把卖点和结果传达出来的人。",
+            previewHighlights: ["标题带更醒目", "结果导向感明显", "适合快节奏筛选"],
             theme: {
               fontPair: "songti-sans",
               accentColor: "burgundy",
@@ -748,18 +761,31 @@ describe("ResumeStudio", () => {
 
     await user.click(screen.getByRole("button", { name: "整理并起稿" }));
 
-    expect(await screen.findByRole("button", { name: "稳妥简洁" })).toHaveAttribute(
-      "aria-pressed",
-      "true",
-    );
-    expect(screen.getByRole("button", { name: "紧凑清晰" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "重点突出" })).toBeInTheDocument();
-    expect(screen.getByText("信息排布最稳，适合大多数校招简历。")).toBeInTheDocument();
+    await screen.findByRole("heading", { name: "挑一个顺眼的版式" });
+    const templateBlock = screen
+      .getByRole("heading", { name: "挑一个顺眼的版式" })
+      .closest(".studio-block") as HTMLElement;
+
+    expect(templateBlock).not.toBeNull();
+    expect(within(templateBlock).getAllByRole("button")).toHaveLength(3);
+
+    const flagshipCard = within(templateBlock).getByRole("button", { name: /稳妥简洁/ });
+    expect(flagshipCard).toHaveAttribute("aria-pressed", "true");
+    expect(within(flagshipCard).getByText("温暖专业")).toBeInTheDocument();
+    expect(within(flagshipCard).getByText("稳妥简洁")).toBeInTheDocument();
+    expect(within(flagshipCard).getByText("信息排布最稳，适合大多数校招简历。")).toBeInTheDocument();
+    expect(
+      within(flagshipCard).getByText("适合想先交出一版稳妥、可信、不过度冒险的校招简历。"),
+    ).toBeInTheDocument();
+    expect(within(flagshipCard).getByText("抬头信息完整清楚")).toBeInTheDocument();
+
+    expect(within(templateBlock).getByRole("button", { name: /紧凑清晰/ })).toBeInTheDocument();
+    expect(within(templateBlock).getByRole("button", { name: /重点突出/ })).toBeInTheDocument();
     expect(screen.queryByText("Flagship Reference")).not.toBeInTheDocument();
     expect(screen.getByText("已先给你几种版式候选，看着顺眼再切换。")).toBeInTheDocument();
   });
 
-  it("deprioritizes template choices again once the user enters strengthening", async () => {
+  it("collapses template choices once the user enters strengthening", async () => {
     const user = userEvent.setup();
     mockAdaptiveIntakeFetch({
       interviewResponses: [
@@ -851,8 +877,16 @@ describe("ResumeStudio", () => {
     await user.click(screen.getByRole("button", { name: "继续完善这版" }));
 
     expect(await screen.findByText("这段经历里能补一个数字结果吗？")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "需要时再看版式" })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "紧凑清晰" })).not.toBeInTheDocument();
+    const templateBlock = screen
+      .getByRole("heading", { name: "挑一个顺眼的版式" })
+      .closest(".studio-block") as HTMLElement;
+
+    expect(templateBlock).not.toBeNull();
+    expect(within(templateBlock).getAllByRole("button")).toHaveLength(1);
+    expect(within(templateBlock).getByRole("button", { name: "需要时再看版式" })).toBeInTheDocument();
+    expect(within(templateBlock).queryByRole("button", { name: /稳妥简洁/ })).not.toBeInTheDocument();
+    expect(within(templateBlock).queryByRole("button", { name: /紧凑清晰/ })).not.toBeInTheDocument();
+    expect(within(templateBlock).queryByRole("button", { name: /重点突出/ })).not.toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "需要时再看版式" }));
     expect(screen.getByRole("button", { name: "紧凑清晰" })).toBeInTheDocument();
