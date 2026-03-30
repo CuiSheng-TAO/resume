@@ -7,9 +7,9 @@ import { POST as interviewNextPost } from "@/app/api/ai/interview-next/route";
 import { POST as rewriteExperiencePost } from "@/app/api/ai/rewrite-experience/route";
 import { resetAiRateLimitStore } from "@/lib/ai-rate-limit";
 import {
-  BASELINE_TEMPLATE_MANIFESTS,
   type TemplateManifest,
 } from "@/lib/template-manifest";
+import { shortlistTemplateLibrary } from "@/lib/template-matching";
 import * as anthropicModule from "@/lib/anthropic";
 
 const ORIGINAL_ENV = process.env;
@@ -514,9 +514,40 @@ describe("AI routes", () => {
     expect(payload.meta.promptVersion).toBeDefined();
   });
 
-  it("returns three template candidates from the template generation route", async () => {
+  it("returns three curated template candidates from shortlist ordering when ai is available", async () => {
     process.env.ANTHROPIC_API_KEY = "test-key";
     process.env.ANTHROPIC_MODEL = "claude-test";
+    const shortlist = shortlistTemplateLibrary(createContentDocument());
+    vi.spyOn(anthropicModule, "requestAnthropicJson").mockResolvedValue({
+      data: {
+        orderedTemplateIds: [
+          shortlist[2]!.templateId,
+          shortlist[1]!.templateId,
+          shortlist[0]!.templateId,
+        ],
+      },
+      attempts: 1,
+    });
+
+    const response = await generateTemplatesPost(createGenerateTemplatesRequest());
+    const payload = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(payload.mode).toBe("anthropic");
+    expect(payload.candidates).toHaveLength(3);
+    expect(payload.candidates.map((manifest: TemplateManifest) => manifest.templateId)).toEqual([
+      shortlist[2]!.templateId,
+      shortlist[1]!.templateId,
+      shortlist[0]!.templateId,
+    ]);
+    expect(payload.candidates.every((manifest: TemplateManifest) => Boolean(manifest.familyLabel))).toBe(true);
+    expect(payload.candidates.every((manifest: TemplateManifest) => Boolean(manifest.fitSummary))).toBe(true);
+  });
+
+  it("ignores direct manifest payloads from ai and falls back to the deterministic shortlist", async () => {
+    process.env.ANTHROPIC_API_KEY = "test-key";
+    process.env.ANTHROPIC_MODEL = "claude-test";
+    const shortlist = shortlistTemplateLibrary(createContentDocument());
     vi.spyOn(anthropicModule, "requestAnthropicJson").mockResolvedValue({
       data: {
         candidates: [
@@ -527,43 +558,6 @@ describe("AI routes", () => {
           createTemplateManifest({
             templateId: "candidate-compact",
             name: "Compact",
-            page: {
-              size: "A4",
-              marginPreset: "tight",
-              layout: "single-column",
-            },
-            theme: {
-              fontPair: "humanist-sans",
-              accentColor: "forest",
-              dividerStyle: "soft",
-            },
-            sections: {
-              hero: { variant: "centered-name-minimal" },
-              education: { variant: "compact-rows" },
-              experience: { variant: "compact-cards" },
-              awards: { variant: "inline-list" },
-              skills: { variant: "grouped-chips" },
-            },
-            compactionPolicy: {
-              density: "tight",
-              overflowPriority: ["skills", "awards", "experience"],
-            },
-          }),
-          createTemplateManifest({
-            templateId: "candidate-banner",
-            name: "Banner",
-            theme: {
-              fontPair: "songti-sans",
-              accentColor: "burgundy",
-              dividerStyle: "bar",
-            },
-            sections: {
-              hero: { variant: "classic-banner" },
-              education: { variant: "highlight-strip" },
-              experience: { variant: "metric-first" },
-              awards: { variant: "two-column-table" },
-              skills: { variant: "inline-tags" },
-            },
           }),
         ],
       },
@@ -577,89 +571,12 @@ describe("AI routes", () => {
     expect(payload.mode).toBe("anthropic");
     expect(payload.candidates).toHaveLength(3);
     expect(payload.candidates.map((manifest: TemplateManifest) => manifest.templateId)).toEqual([
-      "candidate-academic",
-      "candidate-compact",
-      "candidate-banner",
+      shortlist[0]!.templateId,
+      shortlist[1]!.templateId,
+      shortlist[2]!.templateId,
     ]);
-    expect(payload.candidates[0]?.displayName).toBe("稳妥简洁");
-    expect(payload.candidates[1]?.displayName).toBe("紧凑清晰");
-    expect(payload.candidates[2]?.displayName).toBe("重点突出");
-    expect(payload.candidates.every((manifest: TemplateManifest) => Boolean(manifest.description))).toBe(
-      true,
-    );
-  });
-
-  it("accepts array-shaped template candidates from anthropic-compatible providers", async () => {
-    process.env.ANTHROPIC_API_KEY = "test-key";
-    process.env.ANTHROPIC_MODEL = "claude-test";
-    vi.spyOn(anthropicModule, "requestAnthropicJson").mockResolvedValue({
-      data: [
-        createTemplateManifest({
-          templateId: "candidate-academic",
-          name: "Academic",
-        }),
-        createTemplateManifest({
-          templateId: "candidate-compact",
-          name: "Compact",
-          page: {
-            size: "A4",
-            marginPreset: "tight",
-            layout: "single-column",
-          },
-          theme: {
-            fontPair: "humanist-sans",
-            accentColor: "forest",
-            dividerStyle: "soft",
-          },
-          sections: {
-            hero: { variant: "centered-name-minimal" },
-            education: { variant: "compact-rows" },
-            experience: { variant: "compact-cards" },
-            awards: { variant: "inline-list" },
-            skills: { variant: "grouped-chips" },
-          },
-          compactionPolicy: {
-            density: "tight",
-            overflowPriority: ["skills", "awards", "experience"],
-          },
-        }),
-        createTemplateManifest({
-          templateId: "candidate-banner",
-          name: "Banner",
-          theme: {
-            fontPair: "songti-sans",
-            accentColor: "burgundy",
-            dividerStyle: "bar",
-          },
-          sections: {
-            hero: { variant: "classic-banner" },
-            education: { variant: "highlight-strip" },
-            experience: { variant: "metric-first" },
-            awards: { variant: "two-column-table" },
-            skills: { variant: "inline-tags" },
-          },
-        }),
-      ],
-      attempts: 1,
-    });
-
-    const response = await generateTemplatesPost(createGenerateTemplatesRequest());
-    const payload = await response.json();
-
-    expect(response.status).toBe(200);
-    expect(payload.mode).toBe("anthropic");
-    expect(payload.candidates).toHaveLength(3);
-    expect(payload.candidates.map((manifest: TemplateManifest) => manifest.templateId)).toEqual([
-      "candidate-academic",
-      "candidate-compact",
-      "candidate-banner",
-    ]);
-    expect(payload.candidates[0]?.displayName).toBe("稳妥简洁");
-    expect(payload.candidates[1]?.displayName).toBe("紧凑清晰");
-    expect(payload.candidates[2]?.displayName).toBe("重点突出");
-    expect(payload.candidates.every((manifest: TemplateManifest) => Boolean(manifest.description))).toBe(
-      true,
-    );
+    expect(payload.candidates.every((manifest: TemplateManifest) => Boolean(manifest.familyLabel))).toBe(true);
+    expect(payload.candidates.every((manifest: TemplateManifest) => Boolean(manifest.fitSummary))).toBe(true);
   });
 
   it("does not expose provider fallback reasons in template responses when ai is not configured", async () => {
@@ -692,27 +609,16 @@ describe("AI routes", () => {
     );
   });
 
-  it("replaces invalid generated manifests with baseline manifests", async () => {
+  it("fills duplicate and invalid ai ids back to the local shortlist in a stable order", async () => {
     process.env.ANTHROPIC_API_KEY = "test-key";
     process.env.ANTHROPIC_MODEL = "claude-test";
+    const shortlist = shortlistTemplateLibrary(createContentDocument());
     vi.spyOn(anthropicModule, "requestAnthropicJson").mockResolvedValue({
       data: {
-        candidates: [
-          createTemplateManifest({
-            templateId: "candidate-valid",
-            name: "Valid",
-          }),
-          {
-            ...createTemplateManifest({
-              templateId: "candidate-invalid",
-              name: "Invalid",
-            }),
-            page: {
-              size: "A4",
-              marginPreset: "balanced",
-              layout: "two-column",
-            },
-          },
+        orderedTemplateIds: [
+          shortlist[1]!.templateId,
+          shortlist[1]!.templateId,
+          "not-in-shortlist",
         ],
       },
       attempts: 1,
@@ -723,80 +629,15 @@ describe("AI routes", () => {
 
     expect(response.status).toBe(200);
     expect(payload.candidates).toHaveLength(3);
-    expect(payload.candidates[0].templateId).toBe("candidate-valid");
-    expect(payload.candidates[1].templateId).toBe(BASELINE_TEMPLATE_MANIFESTS[1]?.templateId);
-    expect(payload.candidates[2].templateId).toBe(BASELINE_TEMPLATE_MANIFESTS[2]?.templateId);
+    expect(payload.candidates.map((manifest: TemplateManifest) => manifest.templateId)).toEqual([
+      shortlist[1]!.templateId,
+      shortlist[0]!.templateId,
+      shortlist[2]!.templateId,
+    ]);
   });
 
-  it("dedupes repeated generated manifests and replaces them with the next baseline manifest", async () => {
-    process.env.ANTHROPIC_API_KEY = "test-key";
-    process.env.ANTHROPIC_MODEL = "claude-test";
-    const duplicate = createTemplateManifest({
-      templateId: "candidate-a",
-      name: "Candidate A",
-      page: {
-        size: "A4",
-        marginPreset: "tight",
-        layout: "single-column",
-      },
-      theme: {
-        fontPair: "humanist-sans",
-        accentColor: "forest",
-        dividerStyle: "soft",
-      },
-      sections: {
-        hero: { variant: "centered-name-minimal" },
-        education: { variant: "compact-rows" },
-        experience: { variant: "compact-cards" },
-        awards: { variant: "inline-list" },
-        skills: { variant: "grouped-chips" },
-      },
-      compactionPolicy: {
-        density: "tight",
-        overflowPriority: ["skills", "awards", "experience"],
-      },
-    });
-    vi.spyOn(anthropicModule, "requestAnthropicJson").mockResolvedValue({
-      data: {
-        candidates: [
-          duplicate,
-          {
-            ...duplicate,
-            templateId: "candidate-b",
-            name: "Candidate B",
-          },
-          createTemplateManifest({
-            templateId: "candidate-c",
-            name: "Candidate C",
-            theme: {
-              fontPair: "songti-sans",
-              accentColor: "burgundy",
-              dividerStyle: "bar",
-            },
-            sections: {
-              hero: { variant: "classic-banner" },
-              education: { variant: "highlight-strip" },
-              experience: { variant: "metric-first" },
-              awards: { variant: "two-column-table" },
-              skills: { variant: "inline-tags" },
-            },
-          }),
-        ],
-      },
-      attempts: 1,
-    });
-
-    const response = await generateTemplatesPost(createGenerateTemplatesRequest());
-    const payload = await response.json();
-
-    expect(response.status).toBe(200);
-    expect(payload.candidates).toHaveLength(3);
-    expect(payload.candidates[0].templateId).toBe("candidate-a");
-    expect(payload.candidates[1].templateId).toBe("candidate-c");
-    expect(payload.candidates[2].templateId).toBe(BASELINE_TEMPLATE_MANIFESTS[0]?.templateId);
-  });
-
-  it("returns baseline choices when template generation AI is unavailable", async () => {
+  it("returns shortlist choices when template generation AI is unavailable", async () => {
+    const shortlist = shortlistTemplateLibrary(createContentDocument());
     const response = await generateTemplatesPost(createGenerateTemplatesRequest());
     const payload = await response.json();
 
@@ -804,9 +645,9 @@ describe("AI routes", () => {
     expect(payload.mode).toBe("fallback");
     expect(payload.candidates).toHaveLength(3);
     expect(payload.candidates.map((manifest: TemplateManifest) => manifest.templateId)).toEqual(
-      BASELINE_TEMPLATE_MANIFESTS.map((manifest) => manifest.templateId),
+      shortlist.slice(0, 3).map((manifest) => manifest.templateId),
     );
-    expect(payload.candidates.every((manifest: TemplateManifest) => manifest.displayName && manifest.description)).toBe(
+    expect(payload.candidates.every((manifest: TemplateManifest) => manifest.familyLabel && manifest.fitSummary)).toBe(
       true,
     );
     expect(payload.meta.promptVersion).toBeDefined();
