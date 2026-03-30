@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import {
   TEMPLATE_FAMILY_LIBRARY,
+  TEMPLATE_FAMILY_LABELS,
   assertUniqueTemplateIds,
 } from "@/lib/template-library";
 import type {
@@ -148,38 +149,11 @@ const templateManifestBaseSchema = z.object({
 
 type TemplateManifestInput = z.input<typeof templateManifestBaseSchema>;
 
-const BASELINE_TEMPLATE_COPY = {
-  "flagship-reference": {
-    displayName: "稳妥简洁",
-    description: "信息排布最稳，适合大多数校招简历。",
-  },
-  "compact-elegance": {
-    displayName: "紧凑清晰",
-    description: "内容更紧凑，适合信息稍多的一页简历。",
-  },
-  "classic-banner": {
-    displayName: "重点突出",
-    description: "标题更醒目，适合把亮点放在上半页。",
-  },
-} as const satisfies Record<string, { displayName: string; description: string }>;
-
-const TEMPLATE_FAMILY_LABELS: Record<TemplateFamilyId, string> = {
-  "warm-professional": "温暖专业",
-  "calm-academic": "冷静学术",
-  "modern-clean": "现代清爽",
-  "highlight-forward": "重点鲜明",
-};
-
 const curatedTemplateManifestById = new Map(
   TEMPLATE_FAMILY_LIBRARY.map((manifest) => [manifest.templateId, manifest] as const),
 );
 
 const inferTemplateDisplayName = (manifest: TemplateManifestInput) => {
-  const baselineCopy = BASELINE_TEMPLATE_COPY[manifest.templateId as keyof typeof BASELINE_TEMPLATE_COPY];
-  if (baselineCopy) {
-    return baselineCopy.displayName;
-  }
-
   if (manifest.sections.hero.variant === "classic-banner") {
     return "重点突出";
   }
@@ -199,11 +173,6 @@ const inferTemplateDisplayName = (manifest: TemplateManifestInput) => {
 };
 
 const inferTemplateDescription = (manifest: TemplateManifestInput) => {
-  const baselineCopy = BASELINE_TEMPLATE_COPY[manifest.templateId as keyof typeof BASELINE_TEMPLATE_COPY];
-  if (baselineCopy) {
-    return baselineCopy.description;
-  }
-
   if (manifest.sections.hero.variant === "classic-banner") {
     return "标题更醒目，适合把亮点和结果往上提。";
   }

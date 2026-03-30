@@ -83,7 +83,7 @@ const buildVariantManifest = (
   displayName: "测试变体",
   description: "用于测试结构分发",
   familyId: "warm-professional",
-  familyLabel: "温和专业",
+  familyLabel: "温暖专业",
   fitSummary: "用于测试结构分发",
   previewHighlights: ["结构差异", "打印安全"],
   tone: "academic",

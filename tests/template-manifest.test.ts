@@ -298,6 +298,14 @@ describe("template manifest", () => {
     ).toBe(true);
   });
 
+  it("keeps the baseline trio on distinct recipes", () => {
+    const baselineSignatures = BASELINE_TEMPLATE_MANIFESTS.map((manifest) =>
+      createTemplateManifestSignature(manifest),
+    );
+
+    expect(new Set(baselineSignatures).size).toBe(BASELINE_TEMPLATE_MANIFESTS.length);
+  });
+
   it("falls back to the baseline manifest when the selected template is unknown", () => {
     expect(resolveTemplateManifestById("missing-template")).toMatchObject({
       templateId: "flagship-reference",
