@@ -1,0 +1,14 @@
+node_modules
+.next
+coverage
+.DS_Store
+.superpowers
+*.log
+.vercel
+.env*.local
+.preview-static
+test-results
+tsconfig.tsbuildinfo
+resume.html
+impeccable-style-universal
+.vscode
