@@ -140,6 +140,7 @@ const buildContentDocument = (
 });
 
 const escapeRegex = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+const DATE_RANGE_PATTERN = /\d{4}[./-]\d{1,2}\s*[-–—~至]\s*\d{4}[./-]\d{1,2}/;
 
 const matchField = (text: string, label: string) => {
   const escapedLabel = escapeRegex(label);
@@ -163,13 +164,26 @@ const parsePasteText = (text: string): GuidedAnswers => {
     .split(/\n+/)
     .map((line) => line.trim())
     .filter(Boolean);
+  const unlabeledStructuredLines = lines.filter(
+    (line) => !/^(目标岗位|电话|邮箱|所在地|地点|教育|经历)\s*(?:[:：]|\s)/.test(line),
+  );
   const fullName = lines[0] ?? "未命名候选人";
   const targetRole = matchField(text, "目标岗位") || "求职意向待完善";
   const phone = matchField(text, "电话");
   const email = matchField(text, "邮箱");
   const location = matchField(text, "所在地") || matchField(text, "地点");
-  const educationLine = matchField(text, "教育");
-  const experienceLine = matchField(text, "经历");
+  const educationLine =
+    matchField(text, "教育") ||
+    unlabeledStructuredLines.find(
+      (line) => DATE_RANGE_PATTERN.test(line) && /(大学|学院|学校|本科|硕士|博士|专科|中学|高中)/.test(line),
+    ) ||
+    "";
+  const experienceLine =
+    matchField(text, "经历") ||
+    unlabeledStructuredLines.find(
+      (line) => line !== educationLine && DATE_RANGE_PATTERN.test(line),
+    ) ||
+    "";
   const educationParts = educationLine.split(/\s+/).filter(Boolean);
   const experienceParts = experienceLine.split(/\s+/).filter(Boolean);
   const educationDate = educationParts.at(-1) ?? "";
