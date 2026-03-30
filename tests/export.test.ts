@@ -4,6 +4,106 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { buildWorkspaceFromIntakeAnswers } from "@/lib/intake";
 import { exportResumeHtml, exportResumeJson, printToPdf } from "@/lib/export";
+import type { TemplateManifest } from "@/lib/template-manifest";
+
+const buildVariantWorkspace = () => {
+  const workspace = buildWorkspaceFromIntakeAnswers({
+    fullName: "陈星野",
+    targetRole: "招聘运营实习生",
+    phone: "13800001234",
+    email: "chenxingye@example.com",
+    location: "杭州",
+    education: {
+      school: "华东师范大学",
+      degree: "人力资源管理",
+      dateRange: "2022.09-2026.06",
+    },
+    topExperience: {
+      organization: "星桥科技",
+      role: "招聘运营实习生",
+      dateRange: "2025.10-2026.02",
+      narrative: "独立完成初筛与约面。跟进到岗率并复盘流程。",
+    },
+    skills: ["招聘", "沟通协调", "数据分析"],
+  }) as any;
+
+  workspace.profile.politicalStatus = "中共党员";
+  workspace.profile.preferredLocation = "深圳";
+  workspace.profile.websiteUrl = "https://chenxingye.example.com";
+  workspace.profile.websiteLabel = "chenxingye.example.com";
+  workspace.education[0] = {
+    ...workspace.education[0],
+    tag: "保研",
+    highlights: [
+      { label: "综合排名", value: "3/89" },
+      { label: "英语六级", value: "571分" },
+    ],
+  };
+  workspace.awards.push({
+    id: "award-1",
+    title: "全国大学生创新创业大赛省赛银奖",
+    priority: 90,
+  });
+  workspace.awards.push({
+    id: "award-2",
+    title: "校级优秀学生干部",
+    priority: 80,
+  });
+  workspace.experiences.push({
+    id: "exp-campus-1",
+    section: "campus",
+    organization: "华师就业服务中心",
+    organizationNote: "校级组织",
+    role: "学生助理",
+    dateRange: "2024.03-2025.01",
+    priority: 75,
+    locked: false,
+    rawNarrative: "负责宣讲活动统筹与候选人答疑。",
+    bullets: ["负责宣讲活动统筹与候选人答疑。", "沉淀 FAQ 并优化现场签到流程。"],
+    metrics: ["服务 300+ 名同学"],
+    tags: ["校园"],
+    variants: {
+      raw: "负责宣讲活动统筹与候选人答疑。沉淀 FAQ 并优化现场签到流程。",
+      star: "负责宣讲活动统筹与候选人答疑。沉淀 FAQ 并优化现场签到流程。",
+      standard: "负责宣讲活动统筹与候选人答疑。沉淀 FAQ 并优化现场签到流程。",
+      compact: "负责宣讲活动统筹与候选人答疑；沉淀 FAQ 并优化现场签到流程。",
+    },
+  });
+
+  return workspace;
+};
+
+const buildVariantManifest = (
+  templateId: string,
+  sections: TemplateManifest["sections"],
+): TemplateManifest => ({
+  version: "v1",
+  templateId,
+  name: templateId,
+  displayName: "测试变体",
+  description: "用于测试结构分发",
+  familyId: "warm-professional",
+  familyLabel: "温和专业",
+  fitSummary: "用于测试结构分发",
+  previewHighlights: ["结构差异", "打印安全"],
+  tone: "academic",
+  page: {
+    size: "A4",
+    marginPreset: "balanced",
+    layout: "single-column",
+  },
+  theme: {
+    fontPair: "songti-sans",
+    accentColor: "navy",
+    dividerStyle: "line",
+  },
+  sectionOrder: ["education", "experience", "awards", "skills"],
+  sections,
+  compactionPolicy: {
+    density: "balanced",
+    overflowPriority: ["awards", "skills", "experience"],
+  },
+});
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -521,6 +621,67 @@ describe("resume export", () => {
     workspace.layoutPlan.blockingReasons = ["当前内容仍无法稳定落成一页，请继续压缩或删减。"];
 
     expect(() => exportResumeHtml(workspace)).not.toThrow();
+  });
+
+  it("exports split-band and grid-style variants with distinct shared classes", () => {
+    const workspace = buildVariantWorkspace();
+    const manifest = buildVariantManifest("export-variant-grid", {
+      hero: { variant: "split-meta-band" as never },
+      education: { variant: "signal-grid" as never },
+      experience: { variant: "result-callout" as never },
+      awards: { variant: "pill-row" as never },
+      skills: { variant: "label-columns" as never },
+    });
+
+    workspace.templateSession = {
+      ...workspace.templateSession,
+      version: "v1",
+      candidateTemplateIds: [manifest.templateId],
+      selectedTemplateId: manifest.templateId,
+      candidateManifests: [manifest],
+    };
+
+    const html = exportResumeHtml(workspace);
+
+    expect(html).toContain("resume-hero--split-meta-band");
+    expect(html).toContain("resume-hero-band");
+    expect(html).toContain("resume-education--signal-grid");
+    expect(html).toContain("resume-education-signal-grid");
+    expect(html).toContain("resume-experience--result-callout");
+    expect(html).toContain("resume-experience-callout");
+    expect(html).toContain("resume-awards--pill-row");
+    expect(html).toContain("resume-awards-pill-row");
+    expect(html).toContain("resume-skills--label-columns");
+    expect(html).toContain("resume-skills-columns");
+  });
+
+  it("exports card and role-first variants with distinct shared classes", () => {
+    const workspace = buildVariantWorkspace();
+    const manifest = buildVariantManifest("export-variant-card", {
+      hero: { variant: "stacked-profile-card" as never },
+      education: { variant: "school-emphasis" as never },
+      experience: { variant: "role-first" as never },
+      awards: { variant: "two-column-table" },
+      skills: { variant: "inline-tags" },
+    });
+
+    workspace.templateSession = {
+      ...workspace.templateSession,
+      version: "v1",
+      candidateTemplateIds: [manifest.templateId],
+      selectedTemplateId: manifest.templateId,
+      candidateManifests: [manifest],
+    };
+
+    const html = exportResumeHtml(workspace);
+
+    expect(html).toContain("resume-hero--stacked-profile-card");
+    expect(html).toContain("resume-profile-card");
+    expect(html).toContain("resume-profile-card-main");
+    expect(html).toContain("resume-education--school-emphasis");
+    expect(html).toContain("resume-education-school-line");
+    expect(html).toContain("resume-experience--role-first");
+    expect(html).toContain("resume-experience-role-first-header");
   });
 
   it("prints the exported resume document from a hidden iframe after the document loads", () => {

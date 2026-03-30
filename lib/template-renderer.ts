@@ -51,10 +51,94 @@ const renderSectionHeading = (title: string) => `
   </div>
 `;
 
+const renderHomepageBadge = (websiteUrl?: string, websiteLabel?: string) =>
+  websiteUrl && websiteLabel
+    ? `<span class="resume-homepage-badge"><a href="${escapeHtml(websiteUrl)}">${escapeHtml(
+        websiteLabel,
+      )}</a></span>`
+    : "";
+
+const renderHeroContactItems = (
+  items: Array<{ label: string; value: string; english?: boolean }>,
+) =>
+  items
+    .map(
+      (item) =>
+        `<span>${escapeHtml(item.label)}：${
+          item.english
+            ? `<span class="resume-text-latin">${escapeHtml(item.value)}</span>`
+            : escapeHtml(item.value)
+        }</span>`,
+    )
+    .join("");
+
+const renderHeroPhoto = (fullName: string, photoSrc?: string) =>
+  photoSrc
+    ? `<img src="${escapeHtml(photoSrc)}" alt="${escapeHtml(fullName)} 证件照" class="resume-photo">`
+    : "";
+
 const renderHero = (workspace: WorkspaceData, manifest: TemplateManifest) => {
   const model = buildFlagshipReferenceModel(workspace);
   const isCentered = manifest.sections.hero.variant === "centered-name-minimal";
-  const showHomepageBadge = model.websiteUrl && model.websiteLabel;
+  const homepageBadge = renderHomepageBadge(model.websiteUrl, model.websiteLabel);
+  const contactItems = renderHeroContactItems(model.headerItems);
+  const photo = renderHeroPhoto(model.fullName, model.photoSrc);
+
+  if (manifest.sections.hero.variant === "split-meta-band") {
+    return `
+      <div class="${joinClasses(
+        "resume-hero",
+        "resume-hero--split-meta-band",
+        model.headerVariant,
+      )}">
+        <div class="resume-hero-band">
+          <div class="resume-contact resume-contact--band">${contactItems}</div>
+        </div>
+        <div class="resume-hero-main resume-hero-main--split-band">
+          <div class="resume-hero-title-block">
+            <div class="resume-name">
+              ${escapeHtml(model.fullName)}
+              ${homepageBadge}
+            </div>
+            ${
+              model.compactProfileNote
+                ? `<div class="resume-hero-note">${escapeHtml(model.compactProfileNote)}</div>`
+                : ""
+            }
+          </div>
+          ${photo}
+        </div>
+      </div>
+    `;
+  }
+
+  if (manifest.sections.hero.variant === "stacked-profile-card") {
+    return `
+      <div class="${joinClasses(
+        "resume-hero",
+        "resume-hero--stacked-profile-card",
+        model.headerVariant,
+      )}">
+        <div class="resume-profile-card">
+          <div class="resume-profile-card-main">
+            <div class="resume-name">
+              ${escapeHtml(model.fullName)}
+              ${homepageBadge}
+            </div>
+            ${
+              model.compactProfileNote
+                ? `<div class="resume-hero-note resume-hero-note--card">${escapeHtml(
+                    model.compactProfileNote,
+                  )}</div>`
+                : ""
+            }
+            <div class="resume-contact resume-contact--stacked">${contactItems}</div>
+          </div>
+          ${photo ? `<div class="resume-profile-card-media">${photo}</div>` : ""}
+        </div>
+      </div>
+    `;
+  }
 
   return `
     <div class="${joinClasses(
@@ -66,37 +150,38 @@ const renderHero = (workspace: WorkspaceData, manifest: TemplateManifest) => {
       <div class="resume-hero-main">
         <div class="resume-name">
           ${escapeHtml(model.fullName)}
-          ${
-            showHomepageBadge
-              ? `<span class="resume-homepage-badge"><a href="${escapeHtml(
-                  model.websiteUrl!,
-                )}">${escapeHtml(model.websiteLabel!)}</a></span>`
-              : ""
-          }
+          ${homepageBadge}
         </div>
-        <div class="resume-contact">
-          ${model.headerItems
-            .map(
-              (item) =>
-                `<span>${escapeHtml(item.label)}：${
-                  item.english
-                    ? `<span class="resume-text-latin">${escapeHtml(item.value)}</span>`
-                    : escapeHtml(item.value)
-                }</span>`,
-            )
-            .join("")}
-        </div>
+        <div class="resume-contact">${contactItems}</div>
       </div>
-      ${
-        model.photoSrc
-          ? `<img src="${escapeHtml(model.photoSrc)}" alt="${escapeHtml(
-              model.fullName,
-            )} 证件照" class="resume-photo">`
-          : ""
-      }
+      ${photo}
     </div>
   `;
 };
+
+const renderEducationRows = (
+  educationItems: Array<{
+    id: string;
+    school: string;
+    degree: string;
+    dateRange: string;
+    tag?: string;
+  }>,
+) =>
+  educationItems
+    .map(
+      (item) => `
+        <div class="resume-education-row">
+          <span>
+            <span class="resume-text-date">${escapeHtml(item.dateRange)}</span>
+            <b>${escapeHtml(item.school)}</b>
+            ${item.tag ? `<span class="resume-education-tag">${escapeHtml(item.tag)}</span>` : ""}
+          </span>
+          <span class="resume-education-major">${escapeHtml(item.degree)}</span>
+        </div>
+      `,
+    )
+    .join("");
 
 const renderEducation = (workspace: WorkspaceData, manifest: TemplateManifest) => {
   const model = buildFlagshipReferenceModel(workspace);
@@ -109,6 +194,62 @@ const renderEducation = (workspace: WorkspaceData, manifest: TemplateManifest) =
     return "";
   }
 
+  let bodyHtml = `${renderEducationRows(educationItems)}${
+    summaryLine ? `<div class="resume-education-summary">${summaryLine}</div>` : ""
+  }`;
+
+  if (manifest.sections.education.variant === "school-emphasis") {
+    bodyHtml = `
+      <div class="resume-education-school-list">
+        ${educationItems
+          .map(
+            (item) => `
+              <article class="resume-education-school-block">
+                <div class="resume-education-school-line">
+                  <b>${escapeHtml(item.school)}</b>
+                  ${item.tag ? `<span class="resume-education-tag">${escapeHtml(item.tag)}</span>` : ""}
+                </div>
+                <div class="resume-education-detail-line">
+                  <span class="resume-text-date">${escapeHtml(item.dateRange)}</span>
+                  <span class="resume-education-degree-detail">${escapeHtml(item.degree)}</span>
+                </div>
+              </article>
+            `,
+          )
+          .join("")}
+      </div>
+      ${summaryLine ? `<div class="resume-education-summary">${summaryLine}</div>` : ""}
+    `;
+  }
+
+  if (manifest.sections.education.variant === "signal-grid") {
+    const highlightCells = model.educationHighlights.filter(
+      (item) => hasContent(item.label) && hasContent(item.value),
+    );
+
+    bodyHtml = `
+      ${
+        highlightCells.length > 0
+          ? `<div class="resume-education-signal-grid">
+              ${highlightCells
+                .map(
+                  (item) => `
+                    <div class="resume-education-signal">
+                      <span class="resume-education-signal-label">${escapeHtml(item.label)}</span>
+                      <span class="resume-education-signal-value">${escapeHtml(item.value)}</span>
+                    </div>
+                  `,
+                )
+                .join("")}
+            </div>`
+          : ""
+      }
+      <div class="resume-education-school-list">
+        ${renderEducationRows(educationItems)}
+      </div>
+    `;
+  }
+
   return `
     <section class="${joinClasses(
       "resume-section",
@@ -116,34 +257,36 @@ const renderEducation = (workspace: WorkspaceData, manifest: TemplateManifest) =
       `resume-education--${manifest.sections.education.variant}`,
     )}">
       ${renderSectionHeading("教育背景")}
-      <div class="resume-section-body">
-        ${educationItems
-          .map(
-            (item) => `
-              <div class="resume-education-row">
-                <span>
-                  <span class="resume-text-date">${escapeHtml(item.dateRange)}</span>
-                  <b>${escapeHtml(item.school)}</b>
-                  ${
-                    item.tag
-                      ? `<span class="resume-education-tag">${escapeHtml(item.tag)}</span>`
-                      : ""
-                  }
-                </span>
-                <span class="resume-education-major">${escapeHtml(item.degree)}</span>
-              </div>
-            `,
-          )
-          .join("")}
-        ${
-          summaryLine
-            ? `<div class="resume-education-summary">${summaryLine}</div>`
-            : ""
-        }
-      </div>
+      <div class="resume-section-body">${bodyHtml}</div>
     </section>
   `;
 };
+
+const renderExperienceBullets = (bullets: string[], startIndex = 0) =>
+  bullets
+    .map(
+      (bullet, index) => `
+        <div class="resume-experience-item">
+          <span class="num">(${startIndex + index + 1})</span> ${escapeHtml(bullet)}
+        </div>
+      `,
+    )
+    .join("");
+
+const renderExperienceHeader = (experience: FlagshipExperienceEntry) => `
+  <div class="resume-experience-header">
+    <span>
+      <b>${escapeHtml(experience.organization)}</b>
+      ${
+        experience.organizationNote
+          ? `<span class="resume-organization-note">${escapeHtml(experience.organizationNote)}</span>`
+          : ""
+      }
+      （<span class="resume-text-date">${escapeHtml(experience.dateRange)}</span>）
+    </span>
+    <span class="resume-role">${escapeHtml(experience.role)}</span>
+  </div>
+`;
 
 const renderExperienceEntries = (
   entries: FlagshipExperienceEntry[],
@@ -151,36 +294,58 @@ const renderExperienceEntries = (
 ) =>
   entries
     .map(
-      (experience) => `
+      (experience) => {
+        if (manifest.sections.experience.variant === "role-first") {
+          return `
+            <div class="resume-experience-entry resume-experience-entry--role-first">
+              <div class="resume-experience-role-first-header">
+                <div class="resume-role resume-role--lead">${escapeHtml(experience.role)}</div>
+                <div class="resume-experience-role-first-meta">
+                  <b>${escapeHtml(experience.organization)}</b>
+                  ${
+                    experience.organizationNote
+                      ? `<span class="resume-organization-note">${escapeHtml(
+                          experience.organizationNote,
+                        )}</span>`
+                      : ""
+                  }
+                  <span class="resume-text-date">${escapeHtml(experience.dateRange)}</span>
+                </div>
+              </div>
+              ${renderExperienceBullets(experience.bullets)}
+            </div>
+          `;
+        }
+
+        if (manifest.sections.experience.variant === "result-callout") {
+          const [leadBullet, ...remainingBullets] = experience.bullets;
+
+          return `
+            <div class="resume-experience-entry resume-experience-entry--callout">
+              ${
+                leadBullet
+                  ? `<div class="resume-experience-callout">
+                      <span class="resume-experience-callout-label">亮点结果</span>
+                      <span>${escapeHtml(leadBullet)}</span>
+                    </div>`
+                  : ""
+              }
+              ${renderExperienceHeader(experience)}
+              ${renderExperienceBullets(remainingBullets, leadBullet ? 1 : 0)}
+            </div>
+          `;
+        }
+
+        return `
         <div class="${joinClasses(
           "resume-experience-entry",
           manifest.sections.experience.variant === "compact-cards" && "resume-experience-entry--card",
         )}">
-          <div class="resume-experience-header">
-            <span>
-              <b>${escapeHtml(experience.organization)}</b>
-              ${
-                experience.organizationNote
-                  ? `<span class="resume-organization-note">${escapeHtml(
-                      experience.organizationNote,
-                    )}</span>`
-                  : ""
-              }
-              （<span class="resume-text-date">${escapeHtml(experience.dateRange)}</span>）
-            </span>
-            <span class="resume-role">${escapeHtml(experience.role)}</span>
-          </div>
-          ${experience.bullets
-            .map(
-              (bullet, index) => `
-                <div class="resume-experience-item">
-                  <span class="num">(${index + 1})</span> ${escapeHtml(bullet)}
-                </div>
-              `,
-            )
-            .join("")}
+          ${renderExperienceHeader(experience)}
+          ${renderExperienceBullets(experience.bullets)}
         </div>
-      `,
+      `;
+      },
     )
     .join("");
 
@@ -241,6 +406,7 @@ const renderExperience = (workspace: WorkspaceData, manifest: TemplateManifest) 
 const renderAwards = (workspace: WorkspaceData, manifest: TemplateManifest) => {
   const model = buildFlagshipReferenceModel(workspace);
   const showInlineList = manifest.sections.awards.variant === "inline-list";
+  const showPillRow = manifest.sections.awards.variant === "pill-row";
   const awards = model.awards.filter((award) => hasContent(award));
   const awardRows = model.awardRows.filter((row) => row.some((cell) => hasContent(cell)));
 
@@ -256,20 +422,26 @@ const renderAwards = (workspace: WorkspaceData, manifest: TemplateManifest) => {
     )}">
       ${renderSectionHeading("奖项荣誉")}
       <div class="resume-section-body">
-        <table class="resume-awards-table">
-          <tbody>
-            ${awardRows
-              .map(
-                (row) => `
-                  <tr>
-                    <td>${row[0] ? escapeHtml(row[0]) : ""}</td>
-                    <td>${row[1] ? escapeHtml(row[1]) : ""}</td>
-                  </tr>
-                `,
-              )
-              .join("")}
-          </tbody>
-        </table>
+        ${
+          showPillRow
+            ? `<div class="resume-awards-pill-row">${awards
+                .map((award) => `<span class="resume-award-pill">${escapeHtml(award)}</span>`)
+                .join("")}</div>`
+            : `<table class="resume-awards-table">
+                <tbody>
+                  ${awardRows
+                    .map(
+                      (row) => `
+                        <tr>
+                          <td>${row[0] ? escapeHtml(row[0]) : ""}</td>
+                          <td>${row[1] ? escapeHtml(row[1]) : ""}</td>
+                        </tr>
+                      `,
+                    )
+                    .join("")}
+                </tbody>
+              </table>`
+        }
         ${
           showInlineList
             ? `<div class="resume-awards-inline">${awards.map((award) => escapeHtml(award)).join(" / ")}</div>`
@@ -283,6 +455,7 @@ const renderAwards = (workspace: WorkspaceData, manifest: TemplateManifest) => {
 const renderSkills = (workspace: WorkspaceData, manifest: TemplateManifest) => {
   const model = buildFlagshipReferenceModel(workspace);
   const showGroupedChips = manifest.sections.skills.variant === "grouped-chips";
+  const showLabelColumns = manifest.sections.skills.variant === "label-columns";
   const skills = model.skills.filter((skill) => hasContent(skill));
 
   if (skills.length === 0) {
@@ -297,15 +470,36 @@ const renderSkills = (workspace: WorkspaceData, manifest: TemplateManifest) => {
     )}">
       ${renderSectionHeading("专业技能")}
       <div class="resume-section-body">
-        <div class="resume-skills-line">
-          <b>核心技能：</b>${escapeHtml(skills.join("、"))}
-        </div>
         ${
-          model.compactProfileNote
-            ? `<div class="resume-skills-line"><b>补充说明：</b>${escapeHtml(
-                model.compactProfileNote,
-              )}</div>`
-            : ""
+          showLabelColumns
+            ? `<div class="resume-skills-columns">
+                <div class="resume-skills-column">
+                  <span class="resume-skills-column-label">核心技能</span>
+                  <div class="resume-skills-column-value">${skills
+                    .map((skill) => `<span class="resume-skill-chip">${escapeHtml(skill)}</span>`)
+                    .join("")}</div>
+                </div>
+                ${
+                  model.compactProfileNote
+                    ? `<div class="resume-skills-column">
+                        <span class="resume-skills-column-label">补充说明</span>
+                        <div class="resume-skills-column-value resume-skills-column-value--note">${escapeHtml(
+                          model.compactProfileNote,
+                        )}</div>
+                      </div>`
+                    : ""
+                }
+              </div>`
+            : `<div class="resume-skills-line">
+                <b>核心技能：</b>${escapeHtml(skills.join("、"))}
+              </div>
+              ${
+                model.compactProfileNote
+                  ? `<div class="resume-skills-line"><b>补充说明：</b>${escapeHtml(
+                      model.compactProfileNote,
+                    )}</div>`
+                  : ""
+              }`
         }
         ${
           showGroupedChips
@@ -463,6 +657,60 @@ export const SHARED_RESUME_CSS = `
     gap: 0.6em 1.2em;
   }
   .resume-hero--centered .resume-contact { justify-content: center; }
+  .resume-hero-band {
+    margin-bottom: 5px;
+    padding: 4px 8px;
+    background: color-mix(in srgb, var(--resume-accent-soft) 82%, white);
+    border-radius: 6px;
+  }
+  .resume-contact--band {
+    gap: 0.35em 1.1em;
+    justify-content: space-between;
+  }
+  .resume-hero-main--split-band {
+    display: flex;
+    align-items: flex-end;
+    gap: 10px;
+  }
+  .resume-hero-title-block {
+    flex: 1;
+    min-width: 0;
+  }
+  .resume-profile-card {
+    width: 100%;
+    display: flex;
+    align-items: stretch;
+    gap: 10px;
+    padding: 8px 10px;
+    border: 1px solid color-mix(in srgb, var(--resume-line) 68%, white);
+    border-radius: 10px;
+    background: linear-gradient(
+      to bottom,
+      color-mix(in srgb, var(--resume-accent-soft) 55%, white),
+      white 58%
+    );
+  }
+  .resume-profile-card-main {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .resume-profile-card-media {
+    display: flex;
+    align-items: flex-start;
+  }
+  .resume-contact--stacked { gap: 0.3em 1em; }
+  .resume-hero-note {
+    font-size: 10pt;
+    line-height: 1.45;
+    color: var(--resume-muted);
+  }
+  .resume-hero-note--card {
+    padding-top: 2px;
+    border-top: 1px solid color-mix(in srgb, var(--resume-line) 58%, white);
+  }
   .resume-homepage-badge {
     display: inline-block;
     background: linear-gradient(to right, var(--resume-accent), var(--resume-accent) 60%, color-mix(in srgb, var(--resume-accent) 75%, white));
@@ -549,6 +797,58 @@ export const SHARED_RESUME_CSS = `
     margin-top: 1px;
   }
   .resume-education--compact-rows .resume-education-summary { margin-top: 4px; }
+  .resume-education-school-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .resume-education-school-block {
+    padding: 5px 0 4px;
+    border-bottom: 0.5px solid color-mix(in srgb, var(--resume-line) 65%, white);
+  }
+  .resume-education-school-line {
+    display: flex;
+    align-items: baseline;
+    gap: 5px;
+    font-size: 12.5pt;
+    line-height: 1.32;
+  }
+  .resume-education-detail-line {
+    margin-top: 1px;
+    font-size: 10.5pt;
+    line-height: 1.4;
+    color: var(--resume-muted);
+  }
+  .resume-education-degree-detail {
+    margin-left: 2mm;
+    color: var(--resume-text);
+  }
+  .resume-education-signal-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 4px 8px;
+    margin-bottom: 5px;
+  }
+  .resume-education-signal {
+    padding: 5px 7px;
+    border-radius: 7px;
+    background: color-mix(in srgb, var(--resume-accent-soft) 70%, white);
+    border: 1px solid color-mix(in srgb, var(--resume-line) 60%, white);
+  }
+  .resume-education-signal-label {
+    display: block;
+    font-size: 8.8pt;
+    color: var(--resume-muted);
+    letter-spacing: 0.4pt;
+  }
+  .resume-education-signal-value {
+    display: block;
+    margin-top: 1px;
+    font-size: 11.2pt;
+    color: var(--resume-accent);
+    font-family: var(--resume-latin-font);
+    font-weight: 700;
+  }
   .resume-divider { color: var(--resume-line); margin: 0 0.4em; }
   .resume-experience-header {
     display: flex;
@@ -571,6 +871,56 @@ export const SHARED_RESUME_CSS = `
     border: 1px solid color-mix(in srgb, var(--resume-line) 65%, white);
     border-radius: 8px;
     margin-bottom: 6px;
+  }
+  .resume-experience-entry--role-first,
+  .resume-experience-entry--callout {
+    margin-bottom: 6px;
+  }
+  .resume-experience-role-first-header {
+    margin-top: 7px;
+    padding: 5px 0 4px;
+    border-top: 0.5px solid var(--resume-line-strong);
+  }
+  .resume-section-body > :first-child .resume-experience-role-first-header {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: none;
+  }
+  .resume-role--lead {
+    display: block;
+    font-size: 12.4pt;
+    color: var(--resume-accent);
+    margin-bottom: 1px;
+  }
+  .resume-experience-role-first-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.3em 0.6em;
+    font-size: 10.5pt;
+    line-height: 1.4;
+  }
+  .resume-experience-role-first-meta .resume-text-date {
+    color: var(--resume-muted);
+    margin-right: 0;
+  }
+  .resume-experience-callout {
+    display: flex;
+    gap: 6px;
+    align-items: baseline;
+    padding: 4px 8px;
+    margin-bottom: 4px;
+    border-left: 3px solid var(--resume-accent);
+    background: color-mix(in srgb, var(--resume-accent-soft) 68%, white);
+    border-radius: 0 8px 8px 0;
+    font-size: 10.5pt;
+    line-height: 1.42;
+  }
+  .resume-experience-callout-label {
+    white-space: nowrap;
+    color: var(--resume-accent);
+    font-size: 9pt;
+    font-weight: 700;
   }
   .resume-experience-header .resume-text-date { color: var(--resume-muted); }
   .resume-role { white-space: nowrap; }
@@ -598,12 +948,55 @@ export const SHARED_RESUME_CSS = `
     vertical-align: top;
   }
   .resume-awards-table td:last-child { text-align: right; }
+  .resume-awards-pill-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px 6px;
+  }
+  .resume-award-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 999px;
+    border: 1px solid color-mix(in srgb, var(--resume-line) 65%, white);
+    background: color-mix(in srgb, var(--resume-accent-soft) 72%, white);
+    font-size: 9.8pt;
+    line-height: 1.35;
+  }
   .resume-awards-inline { display: none; font-size: 10.5pt; line-height: 1.45; }
   .resume-awards--inline-list .resume-awards-table { display: none; }
   .resume-awards--inline-list .resume-awards-inline { display: block; }
   .resume-skills-line {
     font-size: 10.5pt;
     line-height: 1.45;
+  }
+  .resume-skills-columns {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+  .resume-skills-column {
+    display: grid;
+    grid-template-columns: 5.2em minmax(0, 1fr);
+    gap: 8px;
+    align-items: start;
+  }
+  .resume-skills-column-label {
+    padding-top: 2px;
+    color: var(--resume-accent);
+    font-size: 9.5pt;
+    font-weight: 700;
+    letter-spacing: 0.4pt;
+  }
+  .resume-skills-column-value {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px 6px;
+    font-size: 10.5pt;
+    line-height: 1.45;
+  }
+  .resume-skills-column-value--note {
+    color: var(--resume-text);
   }
   .resume-skills-chips { display: none; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
   .resume-skill-chip {

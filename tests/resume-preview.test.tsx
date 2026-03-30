@@ -3,6 +3,106 @@ import { describe, expect, it, vi } from "vitest";
 
 import { ResumePreview } from "@/components/resume-preview";
 import { buildWorkspaceFromIntakeAnswers } from "@/lib/intake";
+import type { TemplateManifest } from "@/lib/template-manifest";
+
+const buildVariantWorkspace = () => {
+  const workspace = buildWorkspaceFromIntakeAnswers({
+    fullName: "陈星野",
+    targetRole: "招聘运营实习生",
+    phone: "13800001234",
+    email: "chenxingye@example.com",
+    location: "杭州",
+    education: {
+      school: "华东师范大学",
+      degree: "人力资源管理",
+      dateRange: "2022.09-2026.06",
+    },
+    topExperience: {
+      organization: "星桥科技",
+      role: "招聘运营实习生",
+      dateRange: "2025.10-2026.02",
+      narrative: "独立完成初筛与约面。跟进到岗率并复盘流程。",
+    },
+    skills: ["招聘", "沟通协调", "数据分析"],
+  }) as any;
+
+  workspace.profile.politicalStatus = "中共党员";
+  workspace.profile.preferredLocation = "深圳";
+  workspace.profile.websiteUrl = "https://chenxingye.example.com";
+  workspace.profile.websiteLabel = "chenxingye.example.com";
+  workspace.education[0] = {
+    ...workspace.education[0],
+    tag: "保研",
+    highlights: [
+      { label: "综合排名", value: "3/89" },
+      { label: "英语六级", value: "571分" },
+    ],
+  };
+  workspace.awards.push({
+    id: "award-1",
+    title: "全国大学生创新创业大赛省赛银奖",
+    priority: 90,
+  });
+  workspace.awards.push({
+    id: "award-2",
+    title: "校级优秀学生干部",
+    priority: 80,
+  });
+  workspace.experiences.push({
+    id: "exp-campus-1",
+    section: "campus",
+    organization: "华师就业服务中心",
+    organizationNote: "校级组织",
+    role: "学生助理",
+    dateRange: "2024.03-2025.01",
+    priority: 75,
+    locked: false,
+    rawNarrative: "负责宣讲活动统筹与候选人答疑。",
+    bullets: ["负责宣讲活动统筹与候选人答疑。", "沉淀 FAQ 并优化现场签到流程。"],
+    metrics: ["服务 300+ 名同学"],
+    tags: ["校园"],
+    variants: {
+      raw: "负责宣讲活动统筹与候选人答疑。沉淀 FAQ 并优化现场签到流程。",
+      star: "负责宣讲活动统筹与候选人答疑。沉淀 FAQ 并优化现场签到流程。",
+      standard: "负责宣讲活动统筹与候选人答疑。沉淀 FAQ 并优化现场签到流程。",
+      compact: "负责宣讲活动统筹与候选人答疑；沉淀 FAQ 并优化现场签到流程。",
+    },
+  });
+
+  return workspace;
+};
+
+const buildVariantManifest = (
+  templateId: string,
+  sections: TemplateManifest["sections"],
+): TemplateManifest => ({
+  version: "v1",
+  templateId,
+  name: templateId,
+  displayName: "测试变体",
+  description: "用于测试结构分发",
+  familyId: "warm-professional",
+  familyLabel: "温和专业",
+  fitSummary: "用于测试结构分发",
+  previewHighlights: ["结构差异", "打印安全"],
+  tone: "academic",
+  page: {
+    size: "A4",
+    marginPreset: "balanced",
+    layout: "single-column",
+  },
+  theme: {
+    fontPair: "songti-sans",
+    accentColor: "navy",
+    dividerStyle: "line",
+  },
+  sectionOrder: ["education", "experience", "awards", "skills"],
+  sections,
+  compactionPolicy: {
+    density: "balanced",
+    overflowPriority: ["awards", "skills", "experience"],
+  },
+});
 
 describe("ResumePreview", () => {
   it("selects the active manifest through the shared template renderer and falls back to flagship-reference", async () => {
@@ -423,5 +523,66 @@ describe("ResumePreview", () => {
     const summaryLine = container.querySelector(".resume-education-summary");
     expect(summaryLine?.textContent).toContain("英语六级：571分");
     expect(summaryLine?.textContent).toContain("普通话等级：一乙");
+  });
+
+  it("renders split-band and grid-style variants with distinct preview structure", () => {
+    const workspace = buildVariantWorkspace();
+    const manifest = buildVariantManifest("preview-variant-grid", {
+      hero: { variant: "split-meta-band" as never },
+      education: { variant: "signal-grid" as never },
+      experience: { variant: "result-callout" as never },
+      awards: { variant: "pill-row" as never },
+      skills: { variant: "label-columns" as never },
+    });
+
+    workspace.templateSession = {
+      ...workspace.templateSession,
+      version: "v1",
+      candidateTemplateIds: [manifest.templateId],
+      selectedTemplateId: manifest.templateId,
+      candidateManifests: [manifest],
+    };
+
+    const { container } = render(<ResumePreview workspace={workspace} />);
+
+    expect(container.querySelector(".resume-hero--split-meta-band")).toBeTruthy();
+    expect(container.querySelector(".resume-hero-band")).toBeTruthy();
+    expect(container.querySelector(".resume-education--signal-grid")).toBeTruthy();
+    expect(container.querySelector(".resume-education-signal-grid")).toBeTruthy();
+    expect(container.querySelector(".resume-experience--result-callout")).toBeTruthy();
+    expect(container.querySelector(".resume-experience-callout")).toBeTruthy();
+    expect(container.querySelector(".resume-awards--pill-row")).toBeTruthy();
+    expect(container.querySelector(".resume-awards-pill-row")).toBeTruthy();
+    expect(container.querySelector(".resume-skills--label-columns")).toBeTruthy();
+    expect(container.querySelector(".resume-skills-columns")).toBeTruthy();
+  });
+
+  it("renders card and role-first variants with distinct preview structure", () => {
+    const workspace = buildVariantWorkspace();
+    const manifest = buildVariantManifest("preview-variant-card", {
+      hero: { variant: "stacked-profile-card" as never },
+      education: { variant: "school-emphasis" as never },
+      experience: { variant: "role-first" as never },
+      awards: { variant: "two-column-table" },
+      skills: { variant: "inline-tags" },
+    });
+
+    workspace.templateSession = {
+      ...workspace.templateSession,
+      version: "v1",
+      candidateTemplateIds: [manifest.templateId],
+      selectedTemplateId: manifest.templateId,
+      candidateManifests: [manifest],
+    };
+
+    const { container } = render(<ResumePreview workspace={workspace} />);
+
+    expect(container.querySelector(".resume-hero--stacked-profile-card")).toBeTruthy();
+    expect(container.querySelector(".resume-profile-card")).toBeTruthy();
+    expect(container.querySelector(".resume-profile-card-main")).toBeTruthy();
+    expect(container.querySelector(".resume-education--school-emphasis")).toBeTruthy();
+    expect(container.querySelector(".resume-education-school-line")).toBeTruthy();
+    expect(container.querySelector(".resume-experience--role-first")).toBeTruthy();
+    expect(container.querySelector(".resume-experience-role-first-header")).toBeTruthy();
   });
 });

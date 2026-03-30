@@ -6,11 +6,52 @@ import {
 } from "@/lib/template-library";
 import type {
   TemplateFamilyId,
-  TemplateManifest,
+  TemplateManifest as BaseTemplateManifest,
   TemplateManifestDisplayMetadata,
 } from "@/lib/template-types";
 
-export type { TemplateManifest } from "@/lib/template-types";
+type HeroVariant =
+  | "classic-banner"
+  | "name-left-photo-right"
+  | "centered-name-minimal"
+  | "split-meta-band"
+  | "stacked-profile-card";
+
+type EducationVariant =
+  | "compact-rows"
+  | "highlight-strip"
+  | "school-emphasis"
+  | "signal-grid";
+
+type ExperienceVariant =
+  | "stacked-bullets"
+  | "metric-first"
+  | "compact-cards"
+  | "role-first"
+  | "result-callout";
+
+type AwardsVariant = "two-column-table" | "inline-list" | "pill-row";
+type SkillsVariant = "inline-tags" | "grouped-chips" | "label-columns";
+
+export type TemplateManifest = Omit<BaseTemplateManifest, "sections"> & {
+  sections: {
+    hero: {
+      variant: HeroVariant;
+    };
+    education: {
+      variant: EducationVariant;
+    };
+    experience: {
+      variant: ExperienceVariant;
+    };
+    awards: {
+      variant: AwardsVariant;
+    };
+    skills: {
+      variant: SkillsVariant;
+    };
+  };
+};
 
 export const templateToneSchema = z.enum(["calm", "confident", "academic", "modern"]);
 export const pageMarginPresetSchema = z.enum(["tight", "balanced", "airy"]);
@@ -23,15 +64,24 @@ export const heroVariantSchema = z.enum([
   "classic-banner",
   "name-left-photo-right",
   "centered-name-minimal",
+  "split-meta-band",
+  "stacked-profile-card",
 ]);
-export const educationVariantSchema = z.enum(["compact-rows", "highlight-strip"]);
+export const educationVariantSchema = z.enum([
+  "compact-rows",
+  "highlight-strip",
+  "school-emphasis",
+  "signal-grid",
+]);
 export const experienceVariantSchema = z.enum([
   "stacked-bullets",
   "metric-first",
   "compact-cards",
+  "role-first",
+  "result-callout",
 ]);
-export const awardsVariantSchema = z.enum(["two-column-table", "inline-list"]);
-export const skillsVariantSchema = z.enum(["inline-tags", "grouped-chips"]);
+export const awardsVariantSchema = z.enum(["two-column-table", "inline-list", "pill-row"]);
+export const skillsVariantSchema = z.enum(["inline-tags", "grouped-chips", "label-columns"]);
 export const compactionDensitySchema = z.enum(["airy", "balanced", "tight"]);
 export const overflowPrioritySchema = z.enum(["awards", "skills", "experience"]);
 const requiredSectionOrder = sectionKeySchema.options;
