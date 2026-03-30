@@ -5,7 +5,10 @@ import {
   assessIntakeProgress,
   planNextIntakeQuestion,
 } from "@/lib/intake-engine";
-import { createBaselineContentDocumentFromGuidedAnswers } from "@/lib/resume-document";
+import {
+  createBaselineContentDocumentFromGuidedAnswers,
+  createBaselineContentDocumentFromPasteText,
+} from "@/lib/resume-document";
 
 describe("buildWorkspaceFromIntakeAnswers", () => {
   it("creates a first draft workspace from guided answers", () => {
@@ -99,6 +102,33 @@ describe("buildWorkspaceFromIntakeAnswers", () => {
     expect(workspace.contentDocument!.skills).toEqual(["招聘", "候选人沟通", "流程推进"]);
     expect(workspace.contentDocument!.intake.mode).toBe("paste");
     expect(workspace.templateSession!.selectedTemplateId).toBe("flagship-reference");
+  });
+
+  it("parses common label-plus-space lines in pasted intake text", () => {
+    const contentDocument = createBaselineContentDocumentFromPasteText(`
+向金涛
+目标岗位 招聘运营实习生
+电话 18973111415
+邮箱 xjt18973111415@foxmail.com
+所在地 武汉
+教育 中国政法大学 法律 2022.06-2029.07
+经历 星桥科技 招聘运营实习生 2025.10-2026.02 推进多个岗位招聘流程，协助面试安排和候选人沟通。
+    `);
+
+    expect(contentDocument.profile.targetRole).toBe("招聘运营实习生");
+    expect(contentDocument.profile.phone).toBe("18973111415");
+    expect(contentDocument.profile.email).toBe("xjt18973111415@foxmail.com");
+    expect(contentDocument.profile.location).toBe("武汉");
+    expect(contentDocument.education[0]).toMatchObject({
+      school: "中国政法大学",
+      degree: "法律",
+      dateRange: "2022.06-2029.07",
+    });
+    expect(contentDocument.experiences[0]).toMatchObject({
+      organization: "星桥科技",
+      role: "招聘运营实习生",
+      dateRange: "2025.10-2026.02",
+    });
   });
 });
 

@@ -139,9 +139,23 @@ const buildContentDocument = (
   meta: createContentMeta(),
 });
 
+const escapeRegex = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
 const matchField = (text: string, label: string) => {
-  const pattern = new RegExp(`${label}[:：]\\s*(.+)`);
-  return text.match(pattern)?.[1]?.trim() ?? "";
+  const escapedLabel = escapeRegex(label);
+  const patterns = [
+    new RegExp(`(?:^|\\n)\\s*${escapedLabel}\\s*[:：]\\s*(.+)$`, "m"),
+    new RegExp(`(?:^|\\n)\\s*${escapedLabel}\\s+(.+)$`, "m"),
+  ];
+
+  for (const pattern of patterns) {
+    const match = text.match(pattern)?.[1]?.trim();
+    if (match) {
+      return match;
+    }
+  }
+
+  return "";
 };
 
 const parsePasteText = (text: string): GuidedAnswers => {
