@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { TEMPLATE_FAMILY_LIBRARY } from "@/lib/template-library";
 import {
   BASELINE_TEMPLATE_MANIFESTS,
   createTemplateManifestSignature,
@@ -67,8 +68,35 @@ describe("template manifest", () => {
     expect(result.success).toBe(true);
     expect(result.data).toMatchObject({
       displayName: "稳妥简洁",
+      familyId: "calm-academic",
+      familyLabel: "沉静学院",
     });
     expect(result.data?.description).toBeTruthy();
+    expect(result.data?.fitSummary).toBeTruthy();
+    expect(result.data?.previewHighlights.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it("preserves richer card metadata when the manifest already provides it", () => {
+    const result = templateManifestSchema.safeParse(
+      createApprovedManifest({
+        displayName: "自定义标题",
+        description: "自定义描述",
+        familyId: "modern-clean",
+        familyLabel: "现代简洁",
+        fitSummary: "适合想自定义卡片文案的模板。",
+        previewHighlights: ["自定义亮点 A", "自定义亮点 B"],
+      }),
+    );
+
+    expect(result.success).toBe(true);
+    expect(result.data).toMatchObject({
+      displayName: "自定义标题",
+      description: "自定义描述",
+      familyId: "modern-clean",
+      familyLabel: "现代简洁",
+      fitSummary: "适合想自定义卡片文案的模板。",
+      previewHighlights: ["自定义亮点 A", "自定义亮点 B"],
+    });
   });
 
   it("rejects unapproved colors, fonts, layouts, and slot variants", () => {
@@ -171,6 +199,13 @@ describe("template manifest", () => {
       templateId: "flagship-reference",
       displayName: "稳妥简洁",
       description: "信息排布最稳，适合大多数校招简历。",
+      familyId: "warm-professional",
+      familyLabel: "温和专业",
+      fitSummary: TEMPLATE_FAMILY_LIBRARY.find((manifest) => manifest.templateId === "flagship-reference")
+        ?.fitSummary,
+      previewHighlights: TEMPLATE_FAMILY_LIBRARY.find(
+        (manifest) => manifest.templateId === "flagship-reference",
+      )?.previewHighlights,
       page: {
         size: "A4",
         layout: "single-column",

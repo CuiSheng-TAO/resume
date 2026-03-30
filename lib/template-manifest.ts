@@ -1,6 +1,11 @@
 import { z } from "zod";
 
 import { FLAGSHIP_REFERENCE_TEMPLATE_MANIFEST } from "@/lib/flagship-template";
+import {
+  TEMPLATE_FAMILY_LIBRARY,
+  type CuratedTemplateManifest,
+  type TemplateFamilyId,
+} from "@/lib/template-library";
 
 export const templateToneSchema = z.enum(["calm", "confident", "academic", "modern"]);
 export const pageMarginPresetSchema = z.enum(["tight", "balanced", "airy"]);
@@ -28,6 +33,15 @@ const requiredSectionOrder = sectionKeySchema.options;
 
 const templateDisplayNameSchema = z.string().trim().min(1);
 const templateDescriptionSchema = z.string().trim().min(1);
+const templateFamilyIdSchema = z.enum([
+  "warm-professional",
+  "calm-academic",
+  "modern-clean",
+  "highlight-forward",
+]);
+const templateFamilyLabelSchema = z.string().trim().min(1);
+const templateFitSummarySchema = z.string().trim().min(1);
+const templatePreviewHighlightsSchema = z.array(z.string().trim().min(1)).min(2);
 
 export const sectionOrderSchema = z
   .array(sectionKeySchema)
@@ -56,6 +70,10 @@ const templateManifestBaseSchema = z.object({
   name: z.string().trim().min(1),
   displayName: templateDisplayNameSchema.optional(),
   description: templateDescriptionSchema.optional(),
+  familyId: templateFamilyIdSchema.optional(),
+  familyLabel: templateFamilyLabelSchema.optional(),
+  fitSummary: templateFitSummarySchema.optional(),
+  previewHighlights: templatePreviewHighlightsSchema.optional(),
   tone: templateToneSchema,
   page: z.object({
     size: z.literal("A4"),
@@ -92,6 +110,10 @@ const templateManifestBaseSchema = z.object({
 });
 
 type TemplateManifestInput = z.input<typeof templateManifestBaseSchema>;
+type TemplateManifestDisplayMetadata = Pick<
+  CuratedTemplateManifest,
+  "displayName" | "description" | "familyId" | "familyLabel" | "fitSummary" | "previewHighlights"
+>;
 
 const BASELINE_TEMPLATE_COPY = {
   "flagship-reference": {
@@ -107,6 +129,17 @@ const BASELINE_TEMPLATE_COPY = {
     description: "标题更醒目，适合把亮点放在上半页。",
   },
 } as const satisfies Record<string, { displayName: string; description: string }>;
+
+const TEMPLATE_FAMILY_LABELS: Record<TemplateFamilyId, string> = {
+  "warm-professional": "温和专业",
+  "calm-academic": "沉静学院",
+  "modern-clean": "现代简洁",
+  "highlight-forward": "亮点前置",
+};
+
+const curatedTemplateManifestById = new Map(
+  TEMPLATE_FAMILY_LIBRARY.map((manifest) => [manifest.templateId, manifest] as const),
+);
 
 const inferTemplateDisplayName = (manifest: TemplateManifestInput) => {
   const baselineCopy = BASELINE_TEMPLATE_COPY[manifest.templateId as keyof typeof BASELINE_TEMPLATE_COPY];
@@ -156,12 +189,113 @@ const inferTemplateDescription = (manifest: TemplateManifestInput) => {
   return "结构稳妥，适合先做出一版清楚的校招简历。";
 };
 
+const inferTemplateFamilyId = (manifest: TemplateManifestInput): TemplateFamilyId => {
+  if (manifest.sections.hero.variant === "classic-banner") {
+    return "highlight-forward";
+  }
+
+  if (
+    manifest.compactionPolicy.density === "tight" ||
+    manifest.sections.experience.variant === "compact-cards" ||
+    manifest.tone === "modern"
+  ) {
+    return "modern-clean";
+  }
+
+  if (manifest.tone === "academic" || manifest.theme.fontPair === "songti-sans") {
+    return "calm-academic";
+  }
+
+  return "warm-professional";
+};
+
+const inferTemplateFitSummary = (manifest: TemplateManifestInput) => {
+  if (manifest.sections.hero.variant === "classic-banner") {
+    return "适合已经有明确亮点，想把结果和卖点尽快推到上半页的简历。";
+  }
+
+  if (
+    manifest.compactionPolicy.density === "tight" ||
+    manifest.sections.experience.variant === "compact-cards"
+  ) {
+    return "适合信息量偏多、需要在一页内压紧排布的简历。";
+  }
+
+  if (manifest.tone === "academic" || manifest.theme.fontPair === "songti-sans") {
+    return "适合希望先建立教育背景与整体可信度的简历。";
+  }
+
+  return "适合希望先交出一版稳妥、正式、易读简历的场景。";
+};
+
+const inferTemplatePreviewHighlights = (manifest: TemplateManifestInput) => {
+  const highlights = new Set<string>();
+
+  if (manifest.sections.hero.variant === "classic-banner") {
+    highlights.add("顶部标题更醒目");
+  } else if (manifest.sections.hero.variant === "centered-name-minimal") {
+    highlights.add("抬头更轻更极简");
+  } else {
+    highlights.add("抬头信息完整清楚");
+  }
+
+  if (manifest.sections.experience.variant === "metric-first") {
+    highlights.add("经历优先展示结果");
+  } else if (manifest.sections.experience.variant === "compact-cards") {
+    highlights.add("经历模块更利于快扫");
+  } else {
+    highlights.add("经历阅读节奏更稳定");
+  }
+
+  if (manifest.theme.fontPair === "songti-sans") {
+    highlights.add("学院感更明显");
+  } else if (manifest.theme.fontPair === "humanist-sans") {
+    highlights.add("整体更现代利落");
+  } else {
+    highlights.add("正式感更强");
+  }
+
+  if (manifest.compactionPolicy.density === "tight") {
+    highlights.add("更适合高信息密度");
+  } else if (manifest.compactionPolicy.density === "airy") {
+    highlights.add("留白更舒展");
+  } else {
+    highlights.add("版面密度平衡");
+  }
+
+  return [...highlights].slice(0, 3);
+};
+
+const deriveTemplateManifestDisplayMetadata = (
+  manifest: TemplateManifestInput,
+): TemplateManifestDisplayMetadata => {
+  const curated = curatedTemplateManifestById.get(manifest.templateId);
+  const familyId = manifest.familyId ?? curated?.familyId ?? inferTemplateFamilyId(manifest);
+  const normalizedPreviewHighlights = manifest.previewHighlights?.filter(
+    (highlight) => highlight.trim().length > 0,
+  );
+
+  return {
+    displayName: manifest.displayName?.trim() || curated?.displayName || inferTemplateDisplayName(manifest),
+    description: manifest.description?.trim() || curated?.description || inferTemplateDescription(manifest),
+    familyId,
+    familyLabel:
+      manifest.familyLabel?.trim() || curated?.familyLabel || TEMPLATE_FAMILY_LABELS[familyId],
+    fitSummary: manifest.fitSummary?.trim() || curated?.fitSummary || inferTemplateFitSummary(manifest),
+    previewHighlights:
+      (normalizedPreviewHighlights && normalizedPreviewHighlights.length >= 2
+        ? normalizedPreviewHighlights
+        : undefined) ??
+      curated?.previewHighlights ??
+      inferTemplatePreviewHighlights(manifest),
+  };
+};
+
 export const hydrateTemplateManifestDisplayCopy = (
   manifest: TemplateManifestInput,
 ) => ({
   ...manifest,
-  displayName: manifest.displayName?.trim() || inferTemplateDisplayName(manifest),
-  description: manifest.description?.trim() || inferTemplateDescription(manifest),
+  ...deriveTemplateManifestDisplayMetadata(manifest),
 });
 
 export const templateManifestSchema = templateManifestBaseSchema.transform((manifest) =>
@@ -211,84 +345,22 @@ export const TEMPLATE_CANDIDATE_COUNT = 3;
 
 const parseTemplateManifest = (manifest: TemplateManifestInput) => templateManifestSchema.parse(manifest);
 
-export const BASELINE_TEMPLATE_MANIFESTS: TemplateManifest[] = [
-  parseTemplateManifest(FLAGSHIP_REFERENCE_TEMPLATE_MANIFEST),
-  parseTemplateManifest({
-    ...FLAGSHIP_REFERENCE_TEMPLATE_MANIFEST,
-    templateId: "compact-elegance",
-    name: "Compact Elegance",
-    displayName: "紧凑清晰",
-    description: "内容更紧凑，适合信息稍多的一页简历。",
-    tone: "modern",
-    page: {
-      ...FLAGSHIP_REFERENCE_TEMPLATE_MANIFEST.page,
-      marginPreset: "tight",
-    },
-    theme: {
-      fontPair: "humanist-sans",
-      accentColor: "forest",
-      dividerStyle: "soft",
-    },
-    sections: {
-      hero: {
-        variant: "centered-name-minimal",
-      },
-      education: {
-        variant: "compact-rows",
-      },
-      experience: {
-        variant: "compact-cards",
-      },
-      awards: {
-        variant: "inline-list",
-      },
-      skills: {
-        variant: "grouped-chips",
-      },
-    },
-    compactionPolicy: {
-      density: "tight",
-      overflowPriority: ["skills", "awards", "experience"],
-    },
-  }),
-  parseTemplateManifest({
-    ...FLAGSHIP_REFERENCE_TEMPLATE_MANIFEST,
-    templateId: "classic-banner",
-    name: "Classic Banner",
-    displayName: "重点突出",
-    description: "标题更醒目，适合把亮点放在上半页。",
-    tone: "confident",
-    theme: {
-      fontPair: "serif-sans",
-      accentColor: "burgundy",
-      dividerStyle: "bar",
-    },
-    sections: {
-      hero: {
-        variant: "classic-banner",
-      },
-      education: {
-        variant: "highlight-strip",
-      },
-      experience: {
-        variant: "metric-first",
-      },
-      awards: {
-        variant: "two-column-table",
-      },
-      skills: {
-        variant: "inline-tags",
-      },
-    },
-    compactionPolicy: {
-      density: "balanced",
-      overflowPriority: ["experience", "awards", "skills"],
-    },
-  }),
-];
+const CURATED_TEMPLATE_MANIFESTS: TemplateManifest[] = TEMPLATE_FAMILY_LIBRARY.map((manifest) =>
+  parseTemplateManifest(manifest),
+);
+
+const baselineTemplateIds = new Set([
+  FLAGSHIP_REFERENCE_TEMPLATE_MANIFEST.templateId,
+  "compact-elegance",
+  "classic-banner",
+]);
+
+export const BASELINE_TEMPLATE_MANIFESTS: TemplateManifest[] = CURATED_TEMPLATE_MANIFESTS.filter((manifest) =>
+  baselineTemplateIds.has(manifest.templateId),
+);
 
 const manifestById = new Map(
-  BASELINE_TEMPLATE_MANIFESTS.map((manifest) => [manifest.templateId, manifest] as const),
+  CURATED_TEMPLATE_MANIFESTS.map((manifest) => [manifest.templateId, manifest] as const),
 );
 
 export const getTemplateManifestById = (templateId: string) => manifestById.get(templateId);

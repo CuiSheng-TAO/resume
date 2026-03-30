@@ -232,16 +232,19 @@ const resolveCandidateTemplateManifests = (
   candidateManifests?: readonly TemplateManifest[],
   candidateTemplateIds: readonly string[] = BASELINE_TEMPLATE_IDS,
 ) => {
+  const sourceCandidateManifests = candidateManifests ?? [];
   const manifestById = new Map<string, TemplateManifest>();
   const orderedManifests: TemplateManifest[] = [];
 
-  for (const manifest of candidateManifests ?? []) {
+  for (const manifest of sourceCandidateManifests) {
     const hydratedManifest = hydrateTemplateManifestDisplayCopy(manifest);
     manifestById.set(hydratedManifest.templateId, hydratedManifest);
   }
 
   for (const templateId of candidateTemplateIds) {
-    const manifest = manifestById.get(templateId) ?? resolveTemplateManifestById(templateId);
+    const manifest =
+      manifestById.get(templateId) ??
+      resolveTemplateManifestById(templateId, sourceCandidateManifests);
     if (manifest.templateId !== templateId || orderedManifests.some((item) => item.templateId === templateId)) {
       continue;
     }
@@ -251,7 +254,7 @@ const resolveCandidateTemplateManifests = (
     manifestById.set(templateId, hydratedManifest);
   }
 
-  for (const manifest of candidateManifests ?? []) {
+  for (const manifest of sourceCandidateManifests) {
     const hydratedManifest = hydrateTemplateManifestDisplayCopy(manifest);
     if (orderedManifests.some((item) => item.templateId === hydratedManifest.templateId)) {
       continue;
@@ -262,7 +265,7 @@ const resolveCandidateTemplateManifests = (
 
   if (orderedManifests.length === 0) {
     for (const manifest of BASELINE_TEMPLATE_MANIFESTS) {
-      orderedManifests.push(manifest);
+      orderedManifests.push(hydrateTemplateManifestDisplayCopy(manifest));
     }
   }
 
