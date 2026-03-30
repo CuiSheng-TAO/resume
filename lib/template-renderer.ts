@@ -640,6 +640,12 @@ export const SHARED_RESUME_CSS = `
     display: block;
     text-align: center;
   }
+  .resume-hero--split-meta-band {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+  }
   .resume-hero-main { flex: 1; min-width: 0; }
   .resume-name {
     font-size: 24pt;

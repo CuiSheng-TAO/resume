@@ -528,11 +528,11 @@ describe("ResumePreview", () => {
   it("renders split-band and grid-style variants with distinct preview structure", () => {
     const workspace = buildVariantWorkspace();
     const manifest = buildVariantManifest("preview-variant-grid", {
-      hero: { variant: "split-meta-band" as never },
-      education: { variant: "signal-grid" as never },
-      experience: { variant: "result-callout" as never },
-      awards: { variant: "pill-row" as never },
-      skills: { variant: "label-columns" as never },
+      hero: { variant: "split-meta-band" },
+      education: { variant: "signal-grid" },
+      experience: { variant: "result-callout" },
+      awards: { variant: "pill-row" },
+      skills: { variant: "label-columns" },
     });
 
     workspace.templateSession = {
@@ -544,13 +544,30 @@ describe("ResumePreview", () => {
     };
 
     const { container } = render(<ResumePreview workspace={workspace} />);
+    const splitHero = container.querySelector(".resume-hero--split-meta-band");
+    const heroBand = container.querySelector(".resume-hero-band");
+    const heroMain = container.querySelector(".resume-hero-main--split-band");
+    const styleNode = container.querySelector("style");
 
-    expect(container.querySelector(".resume-hero--split-meta-band")).toBeTruthy();
-    expect(container.querySelector(".resume-hero-band")).toBeTruthy();
+    expect(splitHero).toBeTruthy();
+    expect(heroBand).toBeTruthy();
+    expect(heroMain).toBeTruthy();
+    expect(splitHero?.firstElementChild).toBe(heroBand);
+    expect(splitHero?.lastElementChild).toBe(heroMain);
+    expect(heroBand?.textContent).toContain("电话：13800001234");
+    expect(heroBand?.textContent).toContain("政治面貌：中共党员");
+    expect(heroBand?.textContent).not.toContain("陈星野");
+    expect(heroMain?.textContent).toContain("陈星野");
+    expect(heroMain?.textContent).toContain("chenxingye.example.com");
+    expect(styleNode?.textContent).toMatch(
+      /\.resume-hero--split-meta-band\s*\{[^}]*flex-direction:\s*column;[^}]*align-items:\s*stretch;/s,
+    );
     expect(container.querySelector(".resume-education--signal-grid")).toBeTruthy();
     expect(container.querySelector(".resume-education-signal-grid")).toBeTruthy();
+    expect(container.querySelector(".resume-education-signal-grid")?.textContent).toContain("综合排名");
     expect(container.querySelector(".resume-experience--result-callout")).toBeTruthy();
     expect(container.querySelector(".resume-experience-callout")).toBeTruthy();
+    expect(container.querySelector(".resume-experience-callout")?.textContent).toContain("亮点结果");
     expect(container.querySelector(".resume-awards--pill-row")).toBeTruthy();
     expect(container.querySelector(".resume-awards-pill-row")).toBeTruthy();
     expect(container.querySelector(".resume-skills--label-columns")).toBeTruthy();
@@ -560,9 +577,9 @@ describe("ResumePreview", () => {
   it("renders card and role-first variants with distinct preview structure", () => {
     const workspace = buildVariantWorkspace();
     const manifest = buildVariantManifest("preview-variant-card", {
-      hero: { variant: "stacked-profile-card" as never },
-      education: { variant: "school-emphasis" as never },
-      experience: { variant: "role-first" as never },
+      hero: { variant: "stacked-profile-card" },
+      education: { variant: "school-emphasis" },
+      experience: { variant: "role-first" },
       awards: { variant: "two-column-table" },
       skills: { variant: "inline-tags" },
     });
@@ -580,9 +597,12 @@ describe("ResumePreview", () => {
     expect(container.querySelector(".resume-hero--stacked-profile-card")).toBeTruthy();
     expect(container.querySelector(".resume-profile-card")).toBeTruthy();
     expect(container.querySelector(".resume-profile-card-main")).toBeTruthy();
+    expect(container.querySelector(".resume-profile-card-main")?.textContent).toContain("陈星野");
     expect(container.querySelector(".resume-education--school-emphasis")).toBeTruthy();
     expect(container.querySelector(".resume-education-school-line")).toBeTruthy();
+    expect(container.querySelector(".resume-education-school-line")?.textContent).toContain("华东师范大学");
     expect(container.querySelector(".resume-experience--role-first")).toBeTruthy();
     expect(container.querySelector(".resume-experience-role-first-header")).toBeTruthy();
+    expect(container.querySelector(".resume-experience-role-first-header")?.textContent).toContain("招聘运营实习生");
   });
 });

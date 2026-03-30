@@ -626,11 +626,11 @@ describe("resume export", () => {
   it("exports split-band and grid-style variants with distinct shared classes", () => {
     const workspace = buildVariantWorkspace();
     const manifest = buildVariantManifest("export-variant-grid", {
-      hero: { variant: "split-meta-band" as never },
-      education: { variant: "signal-grid" as never },
-      experience: { variant: "result-callout" as never },
-      awards: { variant: "pill-row" as never },
-      skills: { variant: "label-columns" as never },
+      hero: { variant: "split-meta-band" },
+      education: { variant: "signal-grid" },
+      experience: { variant: "result-callout" },
+      awards: { variant: "pill-row" },
+      skills: { variant: "label-columns" },
     });
 
     workspace.templateSession = {
@@ -642,13 +642,29 @@ describe("resume export", () => {
     };
 
     const html = exportResumeHtml(workspace);
+    const document = new DOMParser().parseFromString(html, "text/html");
+    const splitHero = document.querySelector(".resume-hero--split-meta-band");
+    const heroBand = document.querySelector(".resume-hero-band");
+    const heroMain = document.querySelector(".resume-hero-main--split-band");
+    const styleText = document.querySelector("style")?.textContent ?? "";
 
     expect(html).toContain("resume-hero--split-meta-band");
     expect(html).toContain("resume-hero-band");
+    expect(splitHero?.firstElementChild).toBe(heroBand);
+    expect(splitHero?.lastElementChild).toBe(heroMain);
+    expect(heroBand?.textContent).toContain("电话：13800001234");
+    expect(heroBand?.textContent).toContain("政治面貌：中共党员");
+    expect(heroBand?.textContent).not.toContain("陈星野");
+    expect(heroMain?.textContent).toContain("陈星野");
+    expect(styleText).toMatch(
+      /\.resume-hero--split-meta-band\s*\{[^}]*flex-direction:\s*column;[^}]*align-items:\s*stretch;/s,
+    );
     expect(html).toContain("resume-education--signal-grid");
     expect(html).toContain("resume-education-signal-grid");
+    expect(document.querySelector(".resume-education-signal-grid")?.textContent).toContain("综合排名");
     expect(html).toContain("resume-experience--result-callout");
     expect(html).toContain("resume-experience-callout");
+    expect(document.querySelector(".resume-experience-callout")?.textContent).toContain("亮点结果");
     expect(html).toContain("resume-awards--pill-row");
     expect(html).toContain("resume-awards-pill-row");
     expect(html).toContain("resume-skills--label-columns");
@@ -658,9 +674,9 @@ describe("resume export", () => {
   it("exports card and role-first variants with distinct shared classes", () => {
     const workspace = buildVariantWorkspace();
     const manifest = buildVariantManifest("export-variant-card", {
-      hero: { variant: "stacked-profile-card" as never },
-      education: { variant: "school-emphasis" as never },
-      experience: { variant: "role-first" as never },
+      hero: { variant: "stacked-profile-card" },
+      education: { variant: "school-emphasis" },
+      experience: { variant: "role-first" },
       awards: { variant: "two-column-table" },
       skills: { variant: "inline-tags" },
     });
@@ -674,14 +690,18 @@ describe("resume export", () => {
     };
 
     const html = exportResumeHtml(workspace);
+    const document = new DOMParser().parseFromString(html, "text/html");
 
     expect(html).toContain("resume-hero--stacked-profile-card");
     expect(html).toContain("resume-profile-card");
     expect(html).toContain("resume-profile-card-main");
+    expect(document.querySelector(".resume-profile-card-main")?.textContent).toContain("陈星野");
     expect(html).toContain("resume-education--school-emphasis");
     expect(html).toContain("resume-education-school-line");
+    expect(document.querySelector(".resume-education-school-line")?.textContent).toContain("华东师范大学");
     expect(html).toContain("resume-experience--role-first");
     expect(html).toContain("resume-experience-role-first-header");
+    expect(document.querySelector(".resume-experience-role-first-header")?.textContent).toContain("招聘运营实习生");
   });
 
   it("prints the exported resume document from a hidden iframe after the document loads", () => {

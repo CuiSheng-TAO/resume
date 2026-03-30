@@ -5,33 +5,15 @@ import {
   assertUniqueTemplateIds,
 } from "@/lib/template-library";
 import type {
+  AwardsVariant,
+  EducationVariant,
+  ExperienceVariant,
+  HeroVariant,
+  SkillsVariant,
   TemplateFamilyId,
   TemplateManifest as BaseTemplateManifest,
   TemplateManifestDisplayMetadata,
 } from "@/lib/template-types";
-
-type HeroVariant =
-  | "classic-banner"
-  | "name-left-photo-right"
-  | "centered-name-minimal"
-  | "split-meta-band"
-  | "stacked-profile-card";
-
-type EducationVariant =
-  | "compact-rows"
-  | "highlight-strip"
-  | "school-emphasis"
-  | "signal-grid";
-
-type ExperienceVariant =
-  | "stacked-bullets"
-  | "metric-first"
-  | "compact-cards"
-  | "role-first"
-  | "result-callout";
-
-type AwardsVariant = "two-column-table" | "inline-list" | "pill-row";
-type SkillsVariant = "inline-tags" | "grouped-chips" | "label-columns";
 
 export type TemplateManifest = Omit<BaseTemplateManifest, "sections"> & {
   sections: {

@@ -22,6 +22,29 @@ export type TemplateManifestOptionalDisplayMetadata = {
   previewHighlights?: ReadonlyArray<string>;
 };
 
+export type HeroVariant =
+  | "classic-banner"
+  | "name-left-photo-right"
+  | "centered-name-minimal"
+  | "split-meta-band"
+  | "stacked-profile-card";
+
+export type EducationVariant =
+  | "compact-rows"
+  | "highlight-strip"
+  | "school-emphasis"
+  | "signal-grid";
+
+export type ExperienceVariant =
+  | "stacked-bullets"
+  | "metric-first"
+  | "compact-cards"
+  | "role-first"
+  | "result-callout";
+
+export type AwardsVariant = "two-column-table" | "inline-list" | "pill-row";
+export type SkillsVariant = "inline-tags" | "grouped-chips" | "label-columns";
+
 export type TemplateManifestCore = {
   version: "v1";
   templateId: string;
@@ -40,19 +63,19 @@ export type TemplateManifestCore = {
   sectionOrder: ReadonlyArray<"education" | "experience" | "awards" | "skills">;
   sections: {
     hero: {
-      variant: "classic-banner" | "name-left-photo-right" | "centered-name-minimal";
+      variant: HeroVariant;
     };
     education: {
-      variant: "compact-rows" | "highlight-strip";
+      variant: EducationVariant;
     };
     experience: {
-      variant: "stacked-bullets" | "metric-first" | "compact-cards";
+      variant: ExperienceVariant;
     };
     awards: {
-      variant: "two-column-table" | "inline-list";
+      variant: AwardsVariant;
     };
     skills: {
-      variant: "inline-tags" | "grouped-chips";
+      variant: SkillsVariant;
     };
   };
   compactionPolicy: {
