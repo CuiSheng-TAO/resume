@@ -300,16 +300,19 @@ const createStrongInterviewNextRequest = (ip = "4.4.4.5") =>
     }),
   });
 
-const createGenerateTemplatesRequest = (ip = "5.5.5.5") =>
+const createGenerateTemplatesRequest = (
+  ip = "5.5.5.5",
+  body: Record<string, unknown> = {
+    contentDocument: createContentDocument(),
+  },
+) =>
   new Request("http://localhost/api/ai/generate-templates", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       "X-Forwarded-For": ip,
     },
-    body: JSON.stringify({
-      contentDocument: createContentDocument(),
-    }),
+    body: JSON.stringify(body),
   });
 
 describe("AI routes", () => {
@@ -568,7 +571,7 @@ describe("AI routes", () => {
     const payload = await response.json();
 
     expect(response.status).toBe(200);
-    expect(payload.mode).toBe("anthropic");
+    expect(payload.mode).toBe("fallback");
     expect(payload.candidates).toHaveLength(3);
     expect(payload.candidates.map((manifest: TemplateManifest) => manifest.templateId)).toEqual([
       shortlist[0]!.templateId,
@@ -577,6 +580,70 @@ describe("AI routes", () => {
     ]);
     expect(payload.candidates.every((manifest: TemplateManifest) => Boolean(manifest.familyLabel))).toBe(true);
     expect(payload.candidates.every((manifest: TemplateManifest) => Boolean(manifest.fitSummary))).toBe(true);
+  });
+
+  it("returns a stable fallback response for partial content documents", async () => {
+    const response = await generateTemplatesPost(
+      createGenerateTemplatesRequest("5.5.5.6", {
+        contentDocument: {
+          profile: {},
+        },
+      }),
+    );
+    const payload = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(payload.mode).toBe("fallback");
+    expect(payload.candidates).toHaveLength(3);
+    expect(payload.candidates.every((manifest: TemplateManifest) => manifest.templateId)).toBe(true);
+    expect(payload.candidates.every((manifest: TemplateManifest) => manifest.familyLabel && manifest.fitSummary)).toBe(
+      true,
+    );
+  });
+
+  it("falls back locally when ai returns the old template payload shape", async () => {
+    process.env.ANTHROPIC_API_KEY = "test-key";
+    process.env.ANTHROPIC_MODEL = "claude-test";
+    const shortlist = shortlistTemplateLibrary(createContentDocument());
+    vi.spyOn(anthropicModule, "requestAnthropicJson").mockResolvedValue({
+      data: {
+        candidates: [
+          createTemplateManifest({
+            templateId: "candidate-academic",
+            name: "Academic",
+          }),
+        ],
+      },
+      attempts: 1,
+    });
+
+    const response = await generateTemplatesPost(createGenerateTemplatesRequest("5.5.5.7"));
+    const payload = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(payload.mode).toBe("fallback");
+    expect(payload.candidates.map((manifest: TemplateManifest) => manifest.templateId)).toEqual(
+      shortlist.slice(0, 3).map((manifest) => manifest.templateId),
+    );
+  });
+
+  it("falls back locally when ai returns an invalid template payload", async () => {
+    process.env.ANTHROPIC_API_KEY = "test-key";
+    process.env.ANTHROPIC_MODEL = "claude-test";
+    const shortlist = shortlistTemplateLibrary(createContentDocument());
+    vi.spyOn(anthropicModule, "requestAnthropicJson").mockResolvedValue({
+      data: "not-json-shape",
+      attempts: 1,
+    });
+
+    const response = await generateTemplatesPost(createGenerateTemplatesRequest("5.5.5.8"));
+    const payload = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(payload.mode).toBe("fallback");
+    expect(payload.candidates.map((manifest: TemplateManifest) => manifest.templateId)).toEqual(
+      shortlist.slice(0, 3).map((manifest) => manifest.templateId),
+    );
   });
 
   it("does not expose provider fallback reasons in template responses when ai is not configured", async () => {

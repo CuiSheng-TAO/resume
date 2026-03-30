@@ -298,4 +298,66 @@ describe("template library", () => {
       "academic-timeline",
     ]);
   });
+
+  it("does not change metric-driven ranking when the same numeric fact is duplicated in raw and bullets", () => {
+    const withoutDuplicateStorage = createContentDocument({
+      profile: {
+        fullName: "陈星野",
+        targetRole: "增长运营实习生",
+        phone: "13800001234",
+        email: "chenxingye@example.com",
+        location: "杭州",
+        summary: "强调转化率、投放回收和增长结果。",
+        preferredLocation: "杭州",
+        photo: null,
+        compactProfileNote: "强调增长结果。",
+      },
+      experiences: [
+        {
+          id: "exp-1",
+          section: "internship",
+          organization: "增长实验室",
+          role: "增长运营实习生",
+          dateRange: "2025.03-2025.08",
+          priority: 100,
+          locked: true,
+          rawNarrative: "推进13位候选人进入终面。",
+          bullets: [],
+          metrics: [],
+          tags: ["增长", "投放", "转化"],
+          variants: {
+            raw: "推进13位候选人进入终面。",
+            star: "推进13位候选人进入终面。",
+            standard: "推进13位候选人进入终面。",
+            compact: "推进13位候选人进入终面。",
+          },
+        },
+      ],
+      skills: ["Excel", "SQL", "数据分析", "投放优化", "归因分析"],
+    });
+    const withDuplicateStorage = createContentDocument({
+      ...withoutDuplicateStorage,
+      experiences: [
+        {
+          ...withoutDuplicateStorage.experiences[0]!,
+          bullets: ["推进13位候选人进入终面。"],
+        },
+      ],
+    });
+
+    expect(shortlistTemplateLibrary(withDuplicateStorage, 3).map((template) => template.templateId)).toEqual(
+      shortlistTemplateLibrary(withoutDuplicateStorage, 3).map((template) => template.templateId),
+    );
+    expect(
+      scoreTemplateFit(
+        withDuplicateStorage,
+        TEMPLATE_FAMILY_LIBRARY.find((template) => template.templateId === "highlight-metrics")!,
+      ),
+    ).toBe(
+      scoreTemplateFit(
+        withoutDuplicateStorage,
+        TEMPLATE_FAMILY_LIBRARY.find((template) => template.templateId === "highlight-metrics")!,
+      ),
+    );
+  });
 });

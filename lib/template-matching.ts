@@ -72,6 +72,8 @@ const SKILLS_SCREEN_KEYWORDS = [
 const countKeywordMatches = (text: string, keywords: readonly string[]) =>
   keywords.reduce((count, keyword) => count + (text.includes(keyword) ? 1 : 0), 0);
 
+const normalizeSignal = (value: string | undefined) => value?.trim().toLowerCase() ?? "";
+
 const collectContentText = (content: ResumeContentDocument) =>
   [
     content.profile.targetRole,
@@ -112,11 +114,15 @@ const extractContentFeatures = (content: ResumeContentDocument): ContentFeatures
     0,
   );
   const metricCount = content.experiences.reduce((count, item) => {
-    const directMetrics = item.metrics.length;
-    const inferredMetrics = [
-      item.rawNarrative,
-      ...(item.bullets ?? []),
-    ].reduce((total, segment) => total + (segment.match(/\d+(?:\.\d+)?%?/g)?.length ?? 0), 0);
+    const directMetrics = new Set(
+      item.metrics.map((metric) => normalizeSignal(metric)).filter(Boolean),
+    ).size;
+    const inferredMetrics = new Set(
+      [...new Set([item.rawNarrative, ...(item.bullets ?? [])].map((segment) => normalizeSignal(segment)).filter(Boolean))]
+        .flatMap((segment) => segment.match(/\d+(?:\.\d+)?%?/g) ?? [])
+        .map((metric) => normalizeSignal(metric))
+        .filter(Boolean),
+    ).size;
 
     return count + Math.max(directMetrics, inferredMetrics);
   }, 0);

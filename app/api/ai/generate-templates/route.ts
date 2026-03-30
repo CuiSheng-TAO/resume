@@ -7,22 +7,31 @@ import { getAnthropicConfig, requestAnthropicJson } from "@/lib/anthropic";
 import { TEMPLATE_CANDIDATE_COUNT, type TemplateManifest } from "@/lib/template-manifest";
 import { shortlistTemplateLibrary } from "@/lib/template-matching";
 
-const requestSchema = z.object({
-  contentDocument: z
+const contentDocumentSchema = z.object({
+  profile: z
     .object({
-      profile: z
-        .object({
-          targetRole: z.string().optional(),
-        })
-        .passthrough(),
+      targetRole: z.string().optional(),
+      summary: z.string().optional(),
+      compactProfileNote: z.string().optional(),
     })
-    .passthrough(),
+    .passthrough()
+    .default({}),
+  education: z.array(z.object({}).passthrough()).default([]),
+  experiences: z.array(z.object({}).passthrough()).default([]),
+  awards: z.array(z.object({}).passthrough()).default([]),
+  skills: z.array(z.string()).default([]),
+}).passthrough();
+
+const requestSchema = z.object({
+  contentDocument: contentDocumentSchema,
   stylePreference: z.string().optional(),
 });
 
-const responseSchema = z.object({
-  orderedTemplateIds: z.array(z.string()).default([]),
-});
+const responseSchema = z
+  .object({
+    orderedTemplateIds: z.array(z.string()),
+  })
+  .strict();
 
 const SHORTLIST_COUNT = 6;
 
@@ -61,6 +70,24 @@ const pickTemplateCandidates = (
   return candidates;
 };
 
+const createFallbackResponse = (
+  candidates: readonly TemplateManifest[],
+  rateLimitHeaders: ReturnType<typeof buildRateLimitHeaders>,
+) =>
+  NextResponse.json(
+    {
+      candidates,
+      mode: "fallback",
+      meta: {
+        provider: "local",
+        promptVersion: AI_PROMPTS.templateGenerate.version,
+      },
+    },
+    {
+      headers: rateLimitHeaders,
+    },
+  );
+
 export async function POST(request: Request) {
   const rateLimit = checkAiRateLimit(request, "generate-templates");
   if (!rateLimit.allowed) {
@@ -84,21 +111,10 @@ export async function POST(request: Request) {
   const shortlist = shortlistTemplateLibrary(parsed.data.contentDocument, SHORTLIST_COUNT);
   const fallbackCandidates = pickTemplateCandidates(shortlist);
   const config = getAnthropicConfig();
+  const rateLimitHeaders = buildRateLimitHeaders(rateLimit);
 
   if (!config.enabled) {
-    return NextResponse.json(
-      {
-        candidates: fallbackCandidates,
-        mode: "fallback",
-        meta: {
-          provider: "local",
-          promptVersion: AI_PROMPTS.templateGenerate.version,
-        },
-      },
-      {
-        headers: buildRateLimitHeaders(rateLimit),
-      },
-    );
+    return createFallbackResponse(fallbackCandidates, rateLimitHeaders);
   }
 
   try {
@@ -131,10 +147,12 @@ export async function POST(request: Request) {
         .join("\n"),
       schema: responseSchema,
     });
-    const orderedTemplateIds = responseSchema.safeParse(result.data).success
-      ? responseSchema.parse(result.data).orderedTemplateIds
-      : [];
-    const candidates = pickTemplateCandidates(shortlist, orderedTemplateIds);
+    const parsedAiResponse = responseSchema.safeParse(result.data);
+    if (!parsedAiResponse.success) {
+      return createFallbackResponse(fallbackCandidates, rateLimitHeaders);
+    }
+
+    const candidates = pickTemplateCandidates(shortlist, parsedAiResponse.data.orderedTemplateIds);
 
     return NextResponse.json(
       {
@@ -147,22 +165,10 @@ export async function POST(request: Request) {
         },
       },
       {
-        headers: buildRateLimitHeaders(rateLimit),
+        headers: rateLimitHeaders,
       },
     );
   } catch {
-    return NextResponse.json(
-      {
-        candidates: fallbackCandidates,
-        mode: "fallback",
-        meta: {
-          provider: "local",
-          promptVersion: AI_PROMPTS.templateGenerate.version,
-        },
-      },
-      {
-        headers: buildRateLimitHeaders(rateLimit),
-      },
-    );
+    return createFallbackResponse(fallbackCandidates, rateLimitHeaders);
   }
 }
