@@ -10,9 +10,50 @@ import {
   getTemplateManifestById,
   resolveTemplateManifestById,
   templateManifestSchema,
+  type TemplateManifest,
 } from "@/lib/template-manifest";
 
-const createApprovedManifest = (overrides: Partial<ReturnType<typeof createApprovedManifestBase>> = {}) => ({
+type ApprovedManifestOverrides = Partial<
+  Omit<TemplateManifest, "page" | "theme" | "sections" | "compactionPolicy">
+> & {
+  page?: Partial<TemplateManifest["page"]>;
+  theme?: Partial<TemplateManifest["theme"]>;
+  sections?: Partial<{
+    [Key in keyof TemplateManifest["sections"]]: Partial<TemplateManifest["sections"][Key]>;
+  }>;
+  compactionPolicy?: Partial<TemplateManifest["compactionPolicy"]>;
+};
+
+const createApprovedManifestBase = (): TemplateManifest => ({
+  version: "v1",
+  templateId: "approved-v1",
+  name: "Approved V1",
+  tone: "academic",
+  page: {
+    size: "A4",
+    marginPreset: "balanced",
+    layout: "single-column",
+  },
+  theme: {
+    fontPair: "songti-sans",
+    accentColor: "navy",
+    dividerStyle: "line",
+  },
+  sectionOrder: ["education", "experience", "awards", "skills"],
+  sections: {
+    hero: { variant: "name-left-photo-right" },
+    education: { variant: "highlight-strip" },
+    experience: { variant: "stacked-bullets" },
+    awards: { variant: "two-column-table" },
+    skills: { variant: "inline-tags" },
+  },
+  compactionPolicy: {
+    density: "airy",
+    overflowPriority: ["awards", "skills", "experience"],
+  },
+});
+
+const createApprovedManifest = (overrides: ApprovedManifestOverrides = {}): TemplateManifest => ({
   ...createApprovedManifestBase(),
   ...overrides,
   page: {
@@ -25,41 +66,30 @@ const createApprovedManifest = (overrides: Partial<ReturnType<typeof createAppro
   },
   sectionOrder: overrides.sectionOrder ?? createApprovedManifestBase().sectionOrder,
   sections: {
-    ...createApprovedManifestBase().sections,
-    ...overrides.sections,
+    hero: {
+      ...createApprovedManifestBase().sections.hero,
+      ...overrides.sections?.hero,
+    },
+    education: {
+      ...createApprovedManifestBase().sections.education,
+      ...overrides.sections?.education,
+    },
+    experience: {
+      ...createApprovedManifestBase().sections.experience,
+      ...overrides.sections?.experience,
+    },
+    awards: {
+      ...createApprovedManifestBase().sections.awards,
+      ...overrides.sections?.awards,
+    },
+    skills: {
+      ...createApprovedManifestBase().sections.skills,
+      ...overrides.sections?.skills,
+    },
   },
   compactionPolicy: {
     ...createApprovedManifestBase().compactionPolicy,
     ...overrides.compactionPolicy,
-  },
-});
-
-const createApprovedManifestBase = () => ({
-  version: "v1" as const,
-  templateId: "approved-v1",
-  name: "Approved V1",
-  tone: "academic" as const,
-  page: {
-    size: "A4" as const,
-    marginPreset: "balanced" as const,
-    layout: "single-column" as const,
-  },
-  theme: {
-    fontPair: "songti-sans" as const,
-    accentColor: "navy" as const,
-    dividerStyle: "line" as const,
-  },
-  sectionOrder: ["education", "experience", "awards", "skills"] as const,
-  sections: {
-    hero: { variant: "name-left-photo-right" as const },
-    education: { variant: "highlight-strip" as const },
-    experience: { variant: "stacked-bullets" as const },
-    awards: { variant: "two-column-table" as const },
-    skills: { variant: "inline-tags" as const },
-  },
-  compactionPolicy: {
-    density: "airy" as const,
-    overflowPriority: ["awards", "skills", "experience"] as const,
   },
 });
 
