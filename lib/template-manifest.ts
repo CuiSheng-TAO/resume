@@ -1,8 +1,8 @@
 import { z } from "zod";
 
-import { FLAGSHIP_REFERENCE_TEMPLATE_MANIFEST } from "@/lib/flagship-template";
 import {
   TEMPLATE_FAMILY_LIBRARY,
+  assertUniqueTemplateIds,
   type CuratedTemplateManifest,
   type TemplateFamilyId,
 } from "@/lib/template-library";
@@ -342,21 +342,34 @@ const providerTemplateCandidateSchema = z
 
 export const DEFAULT_TEMPLATE_ID = "flagship-reference";
 export const TEMPLATE_CANDIDATE_COUNT = 3;
+export const BASELINE_TEMPLATE_ID_ORDER = [
+  "flagship-reference",
+  "compact-elegance",
+  "classic-banner",
+] as const;
 
 const parseTemplateManifest = (manifest: TemplateManifestInput) => templateManifestSchema.parse(manifest);
+
+assertUniqueTemplateIds(TEMPLATE_FAMILY_LIBRARY);
 
 const CURATED_TEMPLATE_MANIFESTS: TemplateManifest[] = TEMPLATE_FAMILY_LIBRARY.map((manifest) =>
   parseTemplateManifest(manifest),
 );
 
-const baselineTemplateIds = new Set([
-  FLAGSHIP_REFERENCE_TEMPLATE_MANIFEST.templateId,
-  "compact-elegance",
-  "classic-banner",
-]);
+const curatedManifestById = new Map(
+  CURATED_TEMPLATE_MANIFESTS.map((manifest) => [manifest.templateId, manifest] as const),
+);
 
-export const BASELINE_TEMPLATE_MANIFESTS: TemplateManifest[] = CURATED_TEMPLATE_MANIFESTS.filter((manifest) =>
-  baselineTemplateIds.has(manifest.templateId),
+export const BASELINE_TEMPLATE_MANIFESTS: TemplateManifest[] = BASELINE_TEMPLATE_ID_ORDER.map(
+  (templateId) => {
+    const manifest = curatedManifestById.get(templateId);
+
+    if (!manifest) {
+      throw new Error(`Missing baseline template manifest: ${templateId}`);
+    }
+
+    return manifest;
+  },
 );
 
 const manifestById = new Map(

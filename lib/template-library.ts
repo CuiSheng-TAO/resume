@@ -23,7 +23,7 @@ export const TEMPLATE_FAMILY_ORDER: TemplateFamilyId[] = [
   "highlight-forward",
 ];
 
-export const TEMPLATE_FAMILY_LIBRARY: CuratedTemplateManifest[] = [
+const TEMPLATE_FAMILY_LIBRARY_DEFINITIONS: CuratedTemplateManifest[] = [
   {
     version: "v1",
     templateId: "flagship-reference",
@@ -501,3 +501,21 @@ export const TEMPLATE_FAMILY_LIBRARY: CuratedTemplateManifest[] = [
     },
   },
 ];
+
+export const assertUniqueTemplateIds = (
+  manifests: readonly Pick<CuratedTemplateManifest, "templateId">[],
+) => {
+  const seenTemplateIds = new Set<string>();
+
+  for (const manifest of manifests) {
+    if (seenTemplateIds.has(manifest.templateId)) {
+      throw new Error(`Duplicate templateId found in curated template library: ${manifest.templateId}`);
+    }
+
+    seenTemplateIds.add(manifest.templateId);
+  }
+};
+
+assertUniqueTemplateIds(TEMPLATE_FAMILY_LIBRARY_DEFINITIONS);
+
+export const TEMPLATE_FAMILY_LIBRARY = TEMPLATE_FAMILY_LIBRARY_DEFINITIONS;

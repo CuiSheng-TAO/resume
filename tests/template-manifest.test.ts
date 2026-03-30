@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 
+import { deriveInitialTemplateSession } from "@/lib/resume-document";
 import { TEMPLATE_FAMILY_LIBRARY } from "@/lib/template-library";
 import {
   BASELINE_TEMPLATE_MANIFESTS,
+  BASELINE_TEMPLATE_ID_ORDER,
   createTemplateManifestSignature,
   finalizeTemplateManifestCandidates,
   getTemplateManifestById,
@@ -190,8 +192,8 @@ describe("template manifest", () => {
   });
 
   it("keeps the former flagship layout available as the baseline manifest", () => {
-    expect(BASELINE_TEMPLATE_MANIFESTS.map((manifest) => manifest.templateId)).toContain(
-      "flagship-reference",
+    expect(BASELINE_TEMPLATE_MANIFESTS.map((manifest) => manifest.templateId)).toEqual(
+      [...BASELINE_TEMPLATE_ID_ORDER],
     );
     expect(BASELINE_TEMPLATE_MANIFESTS).toHaveLength(3);
     expect(getTemplateManifestById("flagship-reference")).toMatchObject({
@@ -221,6 +223,34 @@ describe("template manifest", () => {
         awards: { variant: "two-column-table" },
         skills: { variant: "inline-tags" },
       },
+    });
+  });
+
+  it("keeps richer metadata after template session normalization", () => {
+    const session = deriveInitialTemplateSession([
+      {
+        ...createApprovedManifest({
+          templateId: "candidate-modern",
+          name: "Candidate Modern",
+        }),
+        displayName: "候选卡片名",
+        description: "候选卡片描述",
+        familyId: "modern-clean",
+        familyLabel: "现代简洁",
+        fitSummary: "适合在 session 归一化后仍然保留完整卡片文案。",
+        previewHighlights: ["亮点一", "亮点二"],
+      },
+    ]);
+
+    expect(session.candidateManifests).toHaveLength(1);
+    expect(session.candidateManifests?.[0]).toMatchObject({
+      templateId: "candidate-modern",
+      displayName: "候选卡片名",
+      description: "候选卡片描述",
+      familyId: "modern-clean",
+      familyLabel: "现代简洁",
+      fitSummary: "适合在 session 归一化后仍然保留完整卡片文案。",
+      previewHighlights: ["亮点一", "亮点二"],
     });
   });
 
