@@ -2,8 +2,29 @@ import type { ResumeContentDocument } from "@/lib/resume-document";
 import { TEMPLATE_FAMILY_LIBRARY } from "@/lib/template-library";
 import type { CuratedTemplateManifest } from "@/lib/template-types";
 
-type TemplateMatchingContentInput = Partial<ResumeContentDocument> & {
-  profile?: Partial<ResumeContentDocument["profile"]>;
+type TemplateMatchingContentInput = {
+  [key: string]: unknown;
+  profile?: {
+    [key: string]: unknown;
+    fullName?: string;
+    targetRole?: string;
+    phone?: string;
+    email?: string;
+    location?: string;
+    summary?: string;
+    preferredLocation?: string;
+    compactProfileNote?: string;
+    photo?: unknown;
+  };
+  education?: Array<Record<string, unknown>>;
+  experiences?: Array<Record<string, unknown>>;
+  awards?: Array<Record<string, unknown>>;
+  skills?: unknown[];
+  intake?: {
+    mode?: string;
+    turns?: Array<Record<string, unknown>>;
+  };
+  meta?: Record<string, unknown>;
 };
 
 type ContentFeatures = {

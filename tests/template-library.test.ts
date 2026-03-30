@@ -360,4 +360,32 @@ describe("template library", () => {
       ),
     );
   });
+
+  it("accepts the loose route content shape when shortlisting templates", () => {
+    type RouteStyleContentDocument = {
+      [key: string]: unknown;
+      profile: {
+        [key: string]: unknown;
+        targetRole?: string;
+        summary?: string;
+        compactProfileNote?: string;
+      };
+      education: Array<Record<string, unknown>>;
+      experiences: Array<Record<string, unknown>>;
+      awards: Array<Record<string, unknown>>;
+      skills: string[];
+    };
+
+    const routeStyleContentDocument: RouteStyleContentDocument = {
+      profile: {
+        targetRole: "招聘运营实习生",
+      },
+      education: [],
+      experiences: [],
+      awards: [],
+      skills: [],
+    };
+
+    expect(shortlistTemplateLibrary(routeStyleContentDocument, 2).map((template) => template.templateId)).toHaveLength(2);
+  });
 });
