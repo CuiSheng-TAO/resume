@@ -3,9 +3,14 @@ import { z } from "zod";
 import {
   TEMPLATE_FAMILY_LIBRARY,
   assertUniqueTemplateIds,
-  type CuratedTemplateManifest,
-  type TemplateFamilyId,
 } from "@/lib/template-library";
+import type {
+  TemplateFamilyId,
+  TemplateManifest,
+  TemplateManifestDisplayMetadata,
+} from "@/lib/template-types";
+
+export type { TemplateManifest } from "@/lib/template-types";
 
 export const templateToneSchema = z.enum(["calm", "confident", "academic", "modern"]);
 export const pageMarginPresetSchema = z.enum(["tight", "balanced", "airy"]);
@@ -110,10 +115,6 @@ const templateManifestBaseSchema = z.object({
 });
 
 type TemplateManifestInput = z.input<typeof templateManifestBaseSchema>;
-type TemplateManifestDisplayMetadata = Pick<
-  CuratedTemplateManifest,
-  "displayName" | "description" | "familyId" | "familyLabel" | "fitSummary" | "previewHighlights"
->;
 
 const BASELINE_TEMPLATE_COPY = {
   "flagship-reference": {
@@ -302,8 +303,6 @@ export const templateManifestSchema = templateManifestBaseSchema.transform((mani
   hydrateTemplateManifestDisplayCopy(manifest),
 );
 
-export type TemplateManifest = z.output<typeof templateManifestSchema>;
-
 const providerSectionSchema = z
   .object({
     variant: z.string().optional(),
@@ -348,7 +347,18 @@ export const BASELINE_TEMPLATE_ID_ORDER = [
   "classic-banner",
 ] as const;
 
-const parseTemplateManifest = (manifest: TemplateManifestInput) => templateManifestSchema.parse(manifest);
+const toTemplateManifestInput = (manifest: TemplateManifest): TemplateManifestInput => ({
+  ...manifest,
+  sectionOrder: [...manifest.sectionOrder],
+  compactionPolicy: {
+    ...manifest.compactionPolicy,
+    overflowPriority: [...manifest.compactionPolicy.overflowPriority],
+  },
+  previewHighlights: manifest.previewHighlights ? [...manifest.previewHighlights] : undefined,
+});
+
+const parseTemplateManifest = (manifest: TemplateManifest) =>
+  templateManifestSchema.parse(toTemplateManifestInput(manifest));
 
 assertUniqueTemplateIds(TEMPLATE_FAMILY_LIBRARY);
 
@@ -629,7 +639,7 @@ const normalizeTemplateManifestCandidate = (
 ): TemplateManifest | null => {
   const approved = templateManifestSchema.safeParse(candidate);
   if (approved.success) {
-    return hydrateTemplateManifestDisplayCopy(approved.data);
+    return hydrateTemplateManifestDisplayCopy(toTemplateManifestInput(approved.data));
   }
 
   const providerCandidate = providerTemplateCandidateSchema.safeParse(candidate);

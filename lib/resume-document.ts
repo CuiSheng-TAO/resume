@@ -233,11 +233,22 @@ const resolveCandidateTemplateManifests = (
   candidateTemplateIds: readonly string[] = BASELINE_TEMPLATE_IDS,
 ) => {
   const sourceCandidateManifests = candidateManifests ?? [];
+  type HydrationManifestInput = Parameters<typeof hydrateTemplateManifestDisplayCopy>[0];
   const manifestById = new Map<string, TemplateManifest>();
   const orderedManifests: TemplateManifest[] = [];
 
+  const toHydrationInput = (manifest: TemplateManifest): HydrationManifestInput => ({
+    ...manifest,
+    sectionOrder: [...manifest.sectionOrder],
+    compactionPolicy: {
+      ...manifest.compactionPolicy,
+      overflowPriority: [...manifest.compactionPolicy.overflowPriority],
+    },
+    previewHighlights: manifest.previewHighlights ? [...manifest.previewHighlights] : undefined,
+  });
+
   for (const manifest of sourceCandidateManifests) {
-    const hydratedManifest = hydrateTemplateManifestDisplayCopy(manifest);
+    const hydratedManifest = hydrateTemplateManifestDisplayCopy(toHydrationInput(manifest));
     manifestById.set(hydratedManifest.templateId, hydratedManifest);
   }
 
@@ -249,13 +260,13 @@ const resolveCandidateTemplateManifests = (
       continue;
     }
 
-    const hydratedManifest = hydrateTemplateManifestDisplayCopy(manifest);
+    const hydratedManifest = hydrateTemplateManifestDisplayCopy(toHydrationInput(manifest));
     orderedManifests.push(hydratedManifest);
     manifestById.set(templateId, hydratedManifest);
   }
 
   for (const manifest of sourceCandidateManifests) {
-    const hydratedManifest = hydrateTemplateManifestDisplayCopy(manifest);
+    const hydratedManifest = hydrateTemplateManifestDisplayCopy(toHydrationInput(manifest));
     if (orderedManifests.some((item) => item.templateId === hydratedManifest.templateId)) {
       continue;
     }
@@ -265,7 +276,7 @@ const resolveCandidateTemplateManifests = (
 
   if (orderedManifests.length === 0) {
     for (const manifest of BASELINE_TEMPLATE_MANIFESTS) {
-      orderedManifests.push(hydrateTemplateManifestDisplayCopy(manifest));
+      orderedManifests.push(hydrateTemplateManifestDisplayCopy(toHydrationInput(manifest)));
     }
   }
 

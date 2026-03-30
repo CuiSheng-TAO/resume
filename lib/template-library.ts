@@ -1,20 +1,4 @@
-import type { TemplateManifest } from "@/lib/template-manifest";
-
-export type TemplateFamilyId =
-  | "warm-professional"
-  | "calm-academic"
-  | "modern-clean"
-  | "highlight-forward";
-
-export type CuratedTemplateManifest = Omit<
-  TemplateManifest,
-  "familyId" | "familyLabel" | "fitSummary" | "previewHighlights"
-> & {
-  familyId: TemplateFamilyId;
-  familyLabel: string;
-  fitSummary: string;
-  previewHighlights: string[];
-};
+import type { CuratedTemplateManifest, TemplateFamilyId } from "@/lib/template-types";
 
 export const TEMPLATE_FAMILY_ORDER: TemplateFamilyId[] = [
   "warm-professional",
