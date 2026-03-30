@@ -5,8 +5,10 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
+    "smoke:local": "node scripts/smoke-local.mjs",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "verify:release": "npm test && npm run lint && npm run build && npm run smoke:local"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.80.0",
@@ -31,6 +33,7 @@
     "eslint-config-next": "^16.2.1",
     "fake-indexeddb": "^6.2.5",
     "jsdom": "^29.0.1",
+    "playwright": "^1.58.2",
     "typescript": "^5.9.3",
     "vitest": "^4.1.2"
   }
