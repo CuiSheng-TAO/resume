@@ -457,11 +457,50 @@ export const scoreTemplateFit = (
   );
 };
 
+const scoreTemplateDiversity = (
+  template: CuratedTemplateManifest,
+  selectedTemplates: CuratedTemplateManifest[],
+) => {
+  if (selectedTemplates.length === 0) {
+    return 0;
+  }
+
+  let penalty = 0;
+
+  for (const selectedTemplate of selectedTemplates) {
+    if (selectedTemplate.familyId === template.familyId) {
+      penalty += 14;
+    }
+
+    if (selectedTemplate.sections.hero.variant === template.sections.hero.variant) {
+      penalty += 8;
+    }
+
+    if (selectedTemplate.sections.experience.variant === template.sections.experience.variant) {
+      penalty += 6;
+    }
+
+    if (selectedTemplate.sections.education.variant === template.sections.education.variant) {
+      penalty += 4;
+    }
+
+    if (selectedTemplate.compactionPolicy.density === template.compactionPolicy.density) {
+      penalty += 2;
+    }
+  }
+
+  const usesNewFamily = selectedTemplates.every(
+    (selectedTemplate) => selectedTemplate.familyId !== template.familyId,
+  );
+
+  return (usesNewFamily ? 5 : 0) - penalty;
+};
+
 export const shortlistTemplateLibrary = (
   content: TemplateMatchingContentInput,
   count = 6,
-): CuratedTemplateManifest[] =>
-  [...TEMPLATE_FAMILY_LIBRARY]
+): CuratedTemplateManifest[] => {
+  const scoredTemplates = [...TEMPLATE_FAMILY_LIBRARY]
     .map((template, index) => ({
       template,
       index,
@@ -473,6 +512,49 @@ export const shortlistTemplateLibrary = (
       }
 
       return left.index - right.index;
-    })
-    .slice(0, Math.max(count, 0))
-    .map(({ template }) => template);
+    });
+  const limit = Math.max(count, 0);
+
+  if (limit === 0) {
+    return [];
+  }
+
+  const selectedTemplates: CuratedTemplateManifest[] = [];
+  const remainingTemplates = [...scoredTemplates];
+
+  while (selectedTemplates.length < limit && remainingTemplates.length > 0) {
+    const nextSelection = remainingTemplates
+      .map((candidate) => ({
+        ...candidate,
+        adjustedScore: candidate.score + scoreTemplateDiversity(candidate.template, selectedTemplates),
+      }))
+      .sort((left, right) => {
+        if (right.adjustedScore !== left.adjustedScore) {
+          return right.adjustedScore - left.adjustedScore;
+        }
+
+        if (right.score !== left.score) {
+          return right.score - left.score;
+        }
+
+        return left.index - right.index;
+      })[0];
+
+    if (!nextSelection) {
+      break;
+    }
+
+    selectedTemplates.push(nextSelection.template);
+    const nextIndex = remainingTemplates.findIndex(
+      (candidate) => candidate.template.templateId === nextSelection.template.templateId,
+    );
+
+    if (nextIndex >= 0) {
+      remainingTemplates.splice(nextIndex, 1);
+    } else {
+      break;
+    }
+  }
+
+  return selectedTemplates;
+};

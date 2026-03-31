@@ -238,9 +238,10 @@ describe("template library", () => {
 
     expect(shortlist.map((template) => template.templateId)).toEqual([
       "highlight-metrics",
+      "warm-experience-first",
       "classic-banner",
-      "highlight-top-block",
     ]);
+    expect(new Set(shortlist.map((template) => template.familyId)).size).toBeGreaterThan(1);
     expect(
       scoreTemplateFit(
         contentDocument,
@@ -315,8 +316,9 @@ describe("template library", () => {
     expect(shortlist.map((template) => template.templateId)).toEqual([
       "academic-ledger",
       "academic-signals",
-      "academic-timeline",
+      "warm-education-first",
     ]);
+    expect(new Set(shortlist.map((template) => template.familyId)).size).toBeGreaterThan(1);
   });
 
   it("does not change metric-driven ranking when the same numeric fact is duplicated in raw and bullets", () => {
