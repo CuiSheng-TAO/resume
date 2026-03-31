@@ -641,6 +641,197 @@ const buildTemplatePreviewSectionVariant = (
   }
 };
 
+const renderTemplatePreviewDefaultLines = () => (
+  <span className="template-card-preview-section-lines">
+    <span className="template-card-preview-line template-card-preview-line-strong" />
+    <span className="template-card-preview-line" />
+    <span className="template-card-preview-line template-card-preview-line-short" />
+  </span>
+);
+
+const renderTemplatePreviewSectionBody = (
+  section: "education" | "experience" | "awards" | "skills",
+  variant: string,
+) => {
+  if (section === "education") {
+    if (variant === "signal-grid") {
+      return (
+        <>
+          <span className="template-card-preview-section-bar" />
+          <span
+            className="template-card-preview-signal-grid"
+            data-testid="template-preview-education-signal-grid"
+          >
+            {Array.from({ length: 4 }).map((_, index) => (
+              <span className="template-card-preview-signal-cell" key={`signal-cell-${index}`} />
+            ))}
+          </span>
+          <span className="template-card-preview-section-lines">
+            <span className="template-card-preview-line template-card-preview-line-strong" />
+            <span className="template-card-preview-line template-card-preview-line-short" />
+          </span>
+        </>
+      );
+    }
+
+    if (variant === "school-emphasis") {
+      return (
+        <>
+          <span className="template-card-preview-section-bar" />
+          <span
+            className="template-card-preview-school-stack"
+            data-testid="template-preview-education-school-emphasis"
+          >
+            <span className="template-card-preview-school-line" />
+            <span className="template-card-preview-school-detail-row">
+              <span className="template-card-preview-school-date" />
+              <span className="template-card-preview-school-detail" />
+            </span>
+          </span>
+        </>
+      );
+    }
+
+    if (variant === "highlight-strip") {
+      return (
+        <>
+          <span className="template-card-preview-section-bar" />
+          <span
+            className="template-card-preview-highlight-strip"
+            data-testid="template-preview-education-highlight-strip"
+          />
+          {renderTemplatePreviewDefaultLines()}
+        </>
+      );
+    }
+
+    return (
+      <>
+        <span className="template-card-preview-section-bar" />
+        <span
+          className="template-card-preview-compact-rows"
+          data-testid="template-preview-education-compact-rows"
+        >
+          <span className="template-card-preview-row-date" />
+          <span className="template-card-preview-row-main" />
+        </span>
+        {renderTemplatePreviewDefaultLines()}
+      </>
+    );
+  }
+
+  if (section === "awards") {
+    if (variant === "two-column-table") {
+      return (
+        <>
+          <span className="template-card-preview-section-bar" />
+          <span
+            className="template-card-preview-awards-grid"
+            data-testid="template-preview-awards-two-column-table"
+          >
+            {Array.from({ length: 4 }).map((_, index) => (
+              <span className="template-card-preview-awards-cell" key={`awards-cell-${index}`} />
+            ))}
+          </span>
+        </>
+      );
+    }
+
+    if (variant === "pill-row") {
+      return (
+        <>
+          <span className="template-card-preview-section-bar" />
+          <span
+            className="template-card-preview-pill-row"
+            data-testid="template-preview-awards-pill-row"
+          >
+            {Array.from({ length: 3 }).map((_, index) => (
+              <span className="template-card-preview-pill" key={`award-pill-${index}`} />
+            ))}
+          </span>
+        </>
+      );
+    }
+
+    return (
+      <>
+        <span className="template-card-preview-section-bar" />
+        <span
+          className="template-card-preview-inline-list"
+          data-testid="template-preview-awards-inline-list"
+        >
+          <span className="template-card-preview-line template-card-preview-line-strong" />
+          <span className="template-card-preview-line template-card-preview-line-short" />
+        </span>
+      </>
+    );
+  }
+
+  if (section === "skills") {
+    if (variant === "grouped-chips") {
+      return (
+        <>
+          <span className="template-card-preview-section-bar" />
+          <span
+            className="template-card-preview-chip-cluster"
+            data-testid="template-preview-skills-grouped-chips"
+          >
+            {Array.from({ length: 2 }).map((_, groupIndex) => (
+              <span className="template-card-preview-chip-group" key={`chip-group-${groupIndex}`}>
+                <span className="template-card-preview-chip-group-label" />
+                <span className="template-card-preview-chip-group-row">
+                  <span className="template-card-preview-chip" />
+                  <span className="template-card-preview-chip" />
+                </span>
+              </span>
+            ))}
+          </span>
+        </>
+      );
+    }
+
+    if (variant === "label-columns") {
+      return (
+        <>
+          <span className="template-card-preview-section-bar" />
+          <span
+            className="template-card-preview-label-columns"
+            data-testid="template-preview-skills-label-columns"
+          >
+            {Array.from({ length: 2 }).map((_, columnIndex) => (
+              <span className="template-card-preview-label-column" key={`label-column-${columnIndex}`}>
+                <span className="template-card-preview-label-heading" />
+                <span className="template-card-preview-label-line" />
+              </span>
+            ))}
+          </span>
+        </>
+      );
+    }
+
+    return (
+      <>
+        <span className="template-card-preview-section-bar" />
+        <span
+          className="template-card-preview-tag-row"
+          data-testid="template-preview-skills-inline-tags"
+        >
+          {Array.from({ length: 4 }).map((_, index) => (
+            <span className="template-card-preview-pill template-card-preview-pill--small" key={`tag-${index}`} />
+          ))}
+        </span>
+      </>
+    );
+  }
+
+  return (
+    <>
+      <span className="template-card-preview-section-bar" />
+      {renderTemplatePreviewDefaultLines()}
+    </>
+  );
+};
+
 const renderTemplateCardPreview = (manifest: TemplateManifest) => (
   <span
     aria-hidden="true"
@@ -668,12 +859,10 @@ const renderTemplateCardPreview = (manifest: TemplateManifest) => (
             className={`template-card-preview-section template-card-preview-section--${section} template-card-preview-section-style--${buildTemplatePreviewSectionVariant(manifest, section)}`}
             key={`${manifest.templateId}-${section}`}
           >
-            <span className="template-card-preview-section-bar" />
-            <span className="template-card-preview-section-lines">
-              <span className="template-card-preview-line template-card-preview-line-strong" />
-              <span className="template-card-preview-line" />
-              <span className="template-card-preview-line template-card-preview-line-short" />
-            </span>
+            {renderTemplatePreviewSectionBody(
+              section,
+              buildTemplatePreviewSectionVariant(manifest, section),
+            )}
           </span>
         ))}
       </span>

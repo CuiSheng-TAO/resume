@@ -496,6 +496,158 @@ button {
   gap: 3px;
 }
 
+.template-card-preview-signal-grid,
+.template-card-preview-awards-grid,
+.template-card-preview-label-columns {
+  display: grid;
+  gap: 4px;
+}
+
+.template-card-preview-signal-grid,
+.template-card-preview-awards-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.template-card-preview-signal-cell,
+.template-card-preview-awards-cell,
+.template-card-preview-school-line,
+.template-card-preview-school-detail,
+.template-card-preview-school-date,
+.template-card-preview-row-date,
+.template-card-preview-row-main,
+.template-card-preview-highlight-strip,
+.template-card-preview-label-heading,
+.template-card-preview-label-line,
+.template-card-preview-chip-group-label,
+.template-card-preview-chip,
+.template-card-preview-pill {
+  display: block;
+  border-radius: 999px;
+}
+
+.template-card-preview-signal-cell,
+.template-card-preview-awards-cell {
+  height: 12px;
+  background: rgba(86, 102, 124, 0.14);
+  border: 1px solid rgba(78, 93, 118, 0.1);
+}
+
+.template-card-preview-school-stack,
+.template-card-preview-compact-rows,
+.template-card-preview-inline-list,
+.template-card-preview-chip-cluster,
+.template-card-preview-pill-row,
+.template-card-preview-tag-row {
+  display: grid;
+  gap: 4px;
+}
+
+.template-card-preview-school-line {
+  width: 68%;
+  height: 5px;
+  background: rgba(86, 102, 124, 0.3);
+}
+
+.template-card-preview-school-detail-row,
+.template-card-preview-compact-rows {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.template-card-preview-school-date,
+.template-card-preview-row-date {
+  width: 26%;
+  height: 4px;
+  background: var(--template-preview-accent-soft);
+}
+
+.template-card-preview-school-detail,
+.template-card-preview-row-main {
+  flex: 1;
+  height: 4px;
+  background: rgba(86, 102, 124, 0.18);
+}
+
+.template-card-preview-highlight-strip {
+  width: 86%;
+  height: 8px;
+  background: linear-gradient(
+    90deg,
+    var(--template-preview-accent-soft),
+    rgba(255, 255, 255, 0.86)
+  );
+}
+
+.template-card-preview-inline-list {
+  grid-template-columns: 1fr;
+}
+
+.template-card-preview-pill-row,
+.template-card-preview-tag-row {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.template-card-preview-pill {
+  height: 8px;
+  background: rgba(86, 102, 124, 0.2);
+}
+
+.template-card-preview-pill--small {
+  height: 7px;
+}
+
+.template-card-preview-tag-row {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.template-card-preview-chip-cluster {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.template-card-preview-chip-group {
+  display: grid;
+  gap: 3px;
+}
+
+.template-card-preview-chip-group-label {
+  width: 52%;
+  height: 4px;
+  background: rgba(86, 102, 124, 0.28);
+}
+
+.template-card-preview-chip-group-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 3px;
+}
+
+.template-card-preview-chip {
+  height: 7px;
+  background: rgba(86, 102, 124, 0.18);
+}
+
+.template-card-preview-label-columns {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.template-card-preview-label-column {
+  display: grid;
+  gap: 3px;
+}
+
+.template-card-preview-label-heading {
+  width: 54%;
+  height: 4px;
+  background: var(--template-preview-accent-soft);
+}
+
+.template-card-preview-label-line {
+  width: 100%;
+  height: 5px;
+  background: rgba(86, 102, 124, 0.18);
+}
+
 .template-card-preview-line {
   width: 100%;
   height: 4px;

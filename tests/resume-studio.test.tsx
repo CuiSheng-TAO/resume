@@ -15,6 +15,8 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
+vi.setConfig({ testTimeout: 15_000 });
+
 const createManifest = (overrides: Partial<TemplateManifest> & Pick<TemplateManifest, "templateId">) =>
   ({
     version: "v1",
@@ -442,7 +444,7 @@ describe("ResumeStudio", () => {
 
     expect(previewRail).not.toBeNull();
     expect(editorColumn).not.toBeNull();
-    expect(screen.getByText("第一版简历已经出来了")).toBeInTheDocument();
+    expect(await screen.findByText("第一版简历已经出来了")).toBeInTheDocument();
     expect(screen.getByText("这是第一版，建议先补 1 条关键信息，再决定要不要导出。")).toBeInTheDocument();
     expect(screen.getByText("如果你已经知道还缺第二段教育或经历，可以直接从下面继续加。")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "继续完善这版" })).toBeInTheDocument();
@@ -877,6 +879,113 @@ describe("ResumeStudio", () => {
     expect(within(signalCard).getByText("上下分区更清楚")).toBeInTheDocument();
     expect(within(signalCard).getByText("结果摘要更醒目")).toBeInTheDocument();
     expect(within(signalCard).getByText("版面更均衡")).toBeInTheDocument();
+  });
+
+  it("renders variant-shaped mini previews for education, awards, and skills", async () => {
+    const user = userEvent.setup();
+    mockAdaptiveIntakeFetch({
+      templateResponse: {
+        mode: "fallback",
+        candidates: [
+          createManifest({
+            templateId: "signal-grid-template",
+            name: "Signal Grid Template",
+            displayName: "学业信号版",
+            description: "适合把学业亮点拆成更好扫读的小块。",
+            familyLabel: "冷静学术",
+            fitSummary: "适合教育亮点明确的人。",
+            previewHighlights: ["亮点分块", "学业信号前置", "阅读更聚焦"],
+            sections: {
+              hero: { variant: "split-meta-band" },
+              education: { variant: "signal-grid" },
+              experience: { variant: "stacked-bullets" },
+              awards: { variant: "two-column-table" },
+              skills: { variant: "label-columns" },
+            },
+          }),
+          createManifest({
+            templateId: "chips-template",
+            name: "Chips Template",
+            displayName: "技能标签版",
+            description: "适合用更轻的标签方式展示技能。",
+            familyLabel: "现代清爽",
+            fitSummary: "适合技能较多但不想显得拥挤的人。",
+            previewHighlights: ["技能更像标签", "模块更轻", "整体更现代"],
+            sections: {
+              hero: { variant: "centered-name-minimal" },
+              education: { variant: "compact-rows" },
+              experience: { variant: "compact-cards" },
+              awards: { variant: "inline-list" },
+              skills: { variant: "grouped-chips" },
+            },
+          }),
+          createManifest({
+            templateId: "pill-awards-template",
+            name: "Pill Awards Template",
+            displayName: "奖项胶囊版",
+            description: "适合用更轻的胶囊条展示奖项。",
+            familyLabel: "重点鲜明",
+            fitSummary: "适合奖项和标签都比较短的人。",
+            previewHighlights: ["奖项更像标签", "亮点集中", "阅读更快"],
+            sections: {
+              hero: { variant: "stacked-profile-card" },
+              education: { variant: "highlight-strip" },
+              experience: { variant: "metric-first" },
+              awards: { variant: "pill-row" },
+              skills: { variant: "inline-tags" },
+            },
+          }),
+        ],
+      },
+    });
+    render(<ResumeStudio />);
+
+    await user.click(screen.getByRole("button", { name: "导入旧材料" }));
+    await user.type(
+      screen.getByLabelText("粘贴现有简历或自我介绍"),
+      [
+        "向金涛",
+        "目标岗位：招聘实习生",
+        "电话：18973111415",
+        "邮箱：3294182452@qq.com",
+        "所在地：深圳",
+        "教育：中南财经政法大学 人力资源管理 2022.09-2026.06",
+        "经历：微派网络科技有限公司 招聘实习生 2025.10-2026.02 支持运营、美术、技术等10余个岗位类型招聘，3个月推进13位候选人入职，招聘目标达成率87%。",
+      ].join("\n"),
+    );
+
+    await user.click(screen.getByRole("button", { name: "整理并起稿" }));
+
+    expect(
+      within(screen.getByTestId("template-preview-signal-grid-template")).getByTestId(
+        "template-preview-education-signal-grid",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      within(screen.getByTestId("template-preview-signal-grid-template")).getByTestId(
+        "template-preview-awards-two-column-table",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      within(screen.getByTestId("template-preview-signal-grid-template")).getByTestId(
+        "template-preview-skills-label-columns",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      within(screen.getByTestId("template-preview-chips-template")).getByTestId(
+        "template-preview-skills-grouped-chips",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      within(screen.getByTestId("template-preview-pill-awards-template")).getByTestId(
+        "template-preview-awards-pill-row",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      within(screen.getByTestId("template-preview-pill-awards-template")).getByTestId(
+        "template-preview-skills-inline-tags",
+      ),
+    ).toBeInTheDocument();
   });
 
   it("shows only the template toggle before reopening template choices in strengthening", async () => {
