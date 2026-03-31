@@ -3054,6 +3054,7 @@ export function ResumeStudio() {
                           const cardHighlights = buildTemplateCardHighlights(manifest);
                           const accessibilityDescription = [
                             manifest.familyLabel,
+                            manifest.bestFor,
                             manifest.fitSummary,
                             cardHighlights.join("，"),
                           ]
@@ -3082,6 +3083,7 @@ export function ResumeStudio() {
                               <span className="template-card-family">{manifest.familyLabel}</span>
                               <span className="template-card-name">{manifest.displayName}</span>
                               <span className="template-card-description">{manifest.description}</span>
+                              <span className="template-card-best-for">{manifest.bestFor}</span>
                               <span className="template-card-fit">{manifest.fitSummary}</span>
                               <span className="template-card-tags">
                                 {cardHighlights.map((highlight) => (
@@ -3133,6 +3135,7 @@ export function ResumeStudio() {
                                         const cardHighlights = buildTemplateCardHighlights(manifest);
                                         const accessibilityDescription = [
                                           manifest.familyLabel,
+                                          manifest.bestFor,
                                           manifest.fitSummary,
                                           cardHighlights.join("，"),
                                         ]
@@ -3157,6 +3160,7 @@ export function ResumeStudio() {
                                             <span className="template-card-family">{manifest.familyLabel}</span>
                                             <span className="template-card-name">{manifest.displayName}</span>
                                             <span className="template-card-description">{manifest.description}</span>
+                                            <span className="template-card-best-for">{manifest.bestFor}</span>
                                             <span className="template-card-fit">{manifest.fitSummary}</span>
                                             <span className="template-card-tags">
                                               {cardHighlights.map((highlight) => (

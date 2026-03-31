@@ -78,6 +78,7 @@ const templateFamilyIdSchema = z.enum([
   "highlight-forward",
 ]);
 const templateFamilyLabelSchema = z.string().trim().min(1);
+const templateBestForSchema = z.string().trim().min(1);
 const templateFitSummarySchema = z.string().trim().min(1);
 const templatePreviewHighlightsSchema = z.array(z.string().trim().min(1)).min(2);
 
@@ -110,6 +111,7 @@ const templateManifestBaseSchema = z.object({
   description: templateDescriptionSchema.optional(),
   familyId: templateFamilyIdSchema.optional(),
   familyLabel: templateFamilyLabelSchema.optional(),
+  bestFor: templateBestForSchema.optional(),
   fitSummary: templateFitSummarySchema.optional(),
   previewHighlights: templatePreviewHighlightsSchema.optional(),
   tone: templateToneSchema,
@@ -189,6 +191,37 @@ const inferTemplateDescription = (manifest: TemplateManifestInput) => {
   }
 
   return "先把姓名、教育和经历都讲清楚，适合大多数校招简历。";
+};
+
+const inferTemplateBestFor = (manifest: TemplateManifestInput) => {
+  if (manifest.sections.hero.variant === "classic-banner") {
+    return "适合亮点和结果明确";
+  }
+
+  if (
+    manifest.compactionPolicy.density === "tight" ||
+    manifest.sections.experience.variant === "compact-cards"
+  ) {
+    return "适合内容多但想压一页";
+  }
+
+  if (manifest.sections.skills.variant === "label-columns" && manifest.sectionOrder[0] === "skills") {
+    return "适合技能标签先看";
+  }
+
+  if (manifest.sections.hero.variant === "stacked-profile-card") {
+    return "适合抬头信息较全";
+  }
+
+  if (manifest.sections.hero.variant === "centered-name-minimal") {
+    return "适合信息已经很清楚";
+  }
+
+  if (manifest.tone === "academic" || manifest.theme.fontPair === "songti-sans") {
+    return "适合教育亮点更强";
+  }
+
+  return "适合先稳稳投递";
 };
 
 const inferTemplateFamilyId = (manifest: TemplateManifestInput): TemplateFamilyId => {
@@ -283,6 +316,7 @@ const deriveTemplateManifestDisplayMetadata = (
     familyId,
     familyLabel:
       manifest.familyLabel?.trim() || curated?.familyLabel || TEMPLATE_FAMILY_LABELS[familyId],
+    bestFor: manifest.bestFor?.trim() || curated?.bestFor || inferTemplateBestFor(manifest),
     fitSummary: manifest.fitSummary?.trim() || curated?.fitSummary || inferTemplateFitSummary(manifest),
     previewHighlights:
       (normalizedPreviewHighlights && normalizedPreviewHighlights.length >= 2

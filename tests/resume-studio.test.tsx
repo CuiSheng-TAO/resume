@@ -785,6 +785,7 @@ describe("ResumeStudio", () => {
     expect(within(flagshipCard).getByText("温暖专业")).toBeInTheDocument();
     expect(within(flagshipCard).getByText("稳妥通用版")).toBeInTheDocument();
     expect(within(flagshipCard).getByText("先把姓名、教育和经历都讲清楚，适合大多数校招简历。")).toBeInTheDocument();
+    expect(within(flagshipCard).getByText("适合先稳稳投递")).toBeInTheDocument();
     expect(
       within(flagshipCard).getByText("适合想先交出一版稳妥、可信、不过度冒险的校招简历。"),
     ).toBeInTheDocument();
@@ -800,6 +801,7 @@ describe("ResumeStudio", () => {
 
     const compactCard = within(templateBlock).getByRole("button", { name: /一页紧凑版/ });
     expect(compactCard).toBeInTheDocument();
+    expect(within(compactCard).getByText("适合内容多但想压一页")).toBeInTheDocument();
     expect(within(compactCard).getByTestId("template-preview-compact-template")).toHaveAttribute(
       "data-hero-variant",
       "centered-name-minimal",
@@ -811,6 +813,7 @@ describe("ResumeStudio", () => {
 
     const bannerCard = within(templateBlock).getByRole("button", { name: /上半页抢眼版/ });
     expect(bannerCard).toBeInTheDocument();
+    expect(within(bannerCard).getByText("适合亮点和结果明确")).toBeInTheDocument();
     expect(within(bannerCard).getByTestId("template-preview-banner-template")).toHaveAttribute(
       "data-hero-variant",
       "classic-banner",

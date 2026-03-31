@@ -51,6 +51,7 @@ export const FLAGSHIP_REFERENCE_TEMPLATE_MANIFEST: TemplateManifest = {
   name: "Flagship Reference",
   displayName: "稳妥通用版",
   description: "先把姓名、教育和经历都讲清楚，适合大多数校招简历。",
+  bestFor: "适合先稳稳投递",
   tone: "academic",
   page: {
     size: "A4",

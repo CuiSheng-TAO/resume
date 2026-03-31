@@ -9,6 +9,7 @@ export type TemplateManifestDisplayMetadata = {
   description: string;
   familyId: TemplateFamilyId;
   familyLabel: string;
+  bestFor: string;
   fitSummary: string;
   previewHighlights: ReadonlyArray<string>;
 };
@@ -18,6 +19,7 @@ export type TemplateManifestOptionalDisplayMetadata = {
   description?: string;
   familyId?: TemplateFamilyId;
   familyLabel?: string;
+  bestFor?: string;
   fitSummary?: string;
   previewHighlights?: ReadonlyArray<string>;
 };

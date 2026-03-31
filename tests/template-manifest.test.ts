@@ -103,6 +103,7 @@ describe("template manifest", () => {
       familyId: "calm-academic",
       familyLabel: "冷静学术",
     });
+    expect(result.data?.bestFor).toBeTruthy();
     expect(result.data?.description).toBeTruthy();
     expect(result.data?.fitSummary).toBeTruthy();
     expect(result.data?.previewHighlights.length).toBeGreaterThanOrEqual(2);
@@ -115,6 +116,7 @@ describe("template manifest", () => {
         description: "自定义描述",
         familyId: "modern-clean",
         familyLabel: "现代清爽",
+        bestFor: "自定义适合人群",
         fitSummary: "适合想自定义卡片文案的模板。",
         previewHighlights: ["自定义亮点 A", "自定义亮点 B"],
       }),
@@ -126,6 +128,7 @@ describe("template manifest", () => {
       description: "自定义描述",
       familyId: "modern-clean",
       familyLabel: "现代清爽",
+      bestFor: "自定义适合人群",
       fitSummary: "适合想自定义卡片文案的模板。",
       previewHighlights: ["自定义亮点 A", "自定义亮点 B"],
     });
