@@ -866,7 +866,18 @@ describe("ResumeStudio", () => {
       within(moreSection).getByText("适合想先投出一版稳妥、正式、不过分冒险的校招简历。"),
     ).toBeInTheDocument();
     expect(within(moreSection).getByRole("button", { name: "教育亮点先读" })).toBeInTheDocument();
-    expect(within(moreSection).getByRole("button", { name: "学业履历版" })).toBeInTheDocument();
+
+    const academicGroup = familyHeadings[0].closest(".template-family-group") as HTMLElement;
+    expect(academicGroup).not.toBeNull();
+    expect(academicGroup.querySelectorAll(".template-card")).toHaveLength(2);
+    expect(within(academicGroup).getByRole("button", { name: "展开本组更多" })).toBeInTheDocument();
+    expect(within(academicGroup).queryByRole("button", { name: "学业履历版" })).not.toBeInTheDocument();
+
+    await user.click(within(academicGroup).getByRole("button", { name: "展开本组更多" }));
+
+    expect(academicGroup.querySelectorAll(".template-card")).toHaveLength(4);
+    expect(within(academicGroup).getByRole("button", { name: "收起本组" })).toBeInTheDocument();
+    expect(within(academicGroup).getByRole("button", { name: "学业履历版" })).toBeInTheDocument();
 
     await user.click(within(moreSection).getByRole("button", { name: "教育亮点先读" }));
 

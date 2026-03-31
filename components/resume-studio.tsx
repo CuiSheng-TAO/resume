@@ -1169,6 +1169,9 @@ export function ResumeStudio() {
   const [followUpDraftAnswer, setFollowUpDraftAnswer] = useState("");
   const [showStarterTemplateOptions, setShowStarterTemplateOptions] = useState(false);
   const [showAdditionalTemplateOptions, setShowAdditionalTemplateOptions] = useState(false);
+  const [expandedAdditionalTemplateFamilies, setExpandedAdditionalTemplateFamilies] = useState<
+    Partial<Record<TemplateFamilyId, boolean>>
+  >({});
   const [activeEducationId, setActiveEducationId] = useState<string | null>(null);
   const [activeExperienceId, setActiveExperienceId] = useState<string | null>(null);
   const [expandedStrengtheningSections, setExpandedStrengtheningSections] = useState<
@@ -1244,6 +1247,12 @@ export function ResumeStudio() {
   useEffect(() => {
     setExpandedStrengtheningSections({});
   }, [editorFlowMode, intakeFollowUpQuestion?.question]);
+
+  useEffect(() => {
+    if (!showAdditionalTemplateOptions) {
+      setExpandedAdditionalTemplateFamilies({});
+    }
+  }, [showAdditionalTemplateOptions]);
 
   useEffect(() => {
     if (
@@ -3119,19 +3128,26 @@ export function ResumeStudio() {
                                 这里再给你几种不同路数的版式。点中后会直接替换进上面的推荐位。
                               </p>
                               <div className="template-library-groups">
-                                {additionalTemplateGroups.map((group) => (
-                                  <section className="template-family-group" key={group.familyId}>
-                                    <div className="template-family-group-header">
-                                      <div className="template-family-group-title">
-                                        <h4>{group.familyLabel}</h4>
-                                        <p className="template-family-group-description">
-                                          {TEMPLATE_FAMILY_SUMMARIES[group.familyId]}
-                                        </p>
+                                {additionalTemplateGroups.map((group) => {
+                                  const isFamilyExpanded =
+                                    expandedAdditionalTemplateFamilies[group.familyId] === true;
+                                  const visibleTemplates = isFamilyExpanded
+                                    ? group.templates
+                                    : group.templates.slice(0, 2);
+
+                                  return (
+                                    <section className="template-family-group" key={group.familyId}>
+                                      <div className="template-family-group-header">
+                                        <div className="template-family-group-title">
+                                          <h4>{group.familyLabel}</h4>
+                                          <p className="template-family-group-description">
+                                            {TEMPLATE_FAMILY_SUMMARIES[group.familyId]}
+                                          </p>
+                                        </div>
+                                        <span>{group.templates.length} 套</span>
                                       </div>
-                                      <span>{group.templates.length} 套</span>
-                                    </div>
-                                    <div className="template-card-grid template-card-grid-secondary">
-                                      {group.templates.map((manifest) => {
+                                      <div className="template-card-grid template-card-grid-secondary">
+                                        {visibleTemplates.map((manifest) => {
                                         const cardHighlights = buildTemplateCardHighlights(manifest);
                                         const accessibilityDescription = [
                                           manifest.familyLabel,
@@ -3171,10 +3187,29 @@ export function ResumeStudio() {
                                             </span>
                                           </button>
                                         );
-                                      })}
-                                    </div>
-                                  </section>
-                                ))}
+                                        })}
+                                      </div>
+                                      {group.templates.length > 2 ? (
+                                        <div className="template-family-group-actions">
+                                          <button
+                                            className="text-button"
+                                            onClick={() =>
+                                              setExpandedAdditionalTemplateFamilies((current) => ({
+                                                ...current,
+                                                [group.familyId]: !isFamilyExpanded,
+                                              }))
+                                            }
+                                            type="button"
+                                          >
+                                            {isFamilyExpanded
+                                              ? "收起本组"
+                                              : "展开本组更多"}
+                                          </button>
+                                        </div>
+                                      ) : null}
+                                    </section>
+                                  );
+                                })}
                               </div>
                             </div>
                           ) : null}

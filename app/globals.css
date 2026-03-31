@@ -256,6 +256,11 @@ button {
   line-height: 1.6;
 }
 
+.template-family-group-actions {
+  display: flex;
+  justify-content: flex-start;
+}
+
 .template-family-group-header span {
   color: rgba(64, 82, 110, 0.72);
   font-size: 0.82rem;
