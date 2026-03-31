@@ -3093,7 +3093,6 @@ export function ResumeStudio() {
                               <span className="template-card-name">{manifest.displayName}</span>
                               <span className="template-card-description">{manifest.description}</span>
                               <span className="template-card-best-for">{manifest.bestFor}</span>
-                              <span className="template-card-fit">{manifest.fitSummary}</span>
                               <span className="template-card-tags">
                                 {cardHighlights.map((highlight) => (
                                   <span className="template-card-tag" key={`${manifest.templateId}-${highlight}`}>
@@ -3177,7 +3176,6 @@ export function ResumeStudio() {
                                             <span className="template-card-name">{manifest.displayName}</span>
                                             <span className="template-card-description">{manifest.description}</span>
                                             <span className="template-card-best-for">{manifest.bestFor}</span>
-                                            <span className="template-card-fit">{manifest.fitSummary}</span>
                                             <span className="template-card-tags">
                                               {cardHighlights.map((highlight) => (
                                                 <span className="template-card-tag" key={`${manifest.templateId}-${highlight}`}>

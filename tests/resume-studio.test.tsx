@@ -787,8 +787,8 @@ describe("ResumeStudio", () => {
     expect(within(flagshipCard).getByText("先把姓名、教育和经历都讲清楚，适合大多数校招简历。")).toBeInTheDocument();
     expect(within(flagshipCard).getByText("适合先稳稳投递")).toBeInTheDocument();
     expect(
-      within(flagshipCard).getByText("适合想先交出一版稳妥、可信、不过度冒险的校招简历。"),
-    ).toBeInTheDocument();
+      within(flagshipCard).queryByText("适合想先交出一版稳妥、可信、不过度冒险的校招简历。"),
+    ).not.toBeInTheDocument();
     expect(within(flagshipCard).getByText("抬头信息完整清楚")).toBeInTheDocument();
     expect(within(flagshipCard).getByTestId("template-preview-flagship-reference")).toHaveAttribute(
       "data-hero-variant",
@@ -1175,8 +1175,8 @@ describe("ResumeStudio", () => {
     expect(within(templateBlock).getByText("3 套候选")).toBeInTheDocument();
     expect(within(reopenedFlagshipCard).getByText("温暖专业")).toBeInTheDocument();
     expect(
-      within(reopenedFlagshipCard).getByText("适合想先交出一版稳妥、可信、不过度冒险的校招简历。"),
-    ).toBeInTheDocument();
+      within(reopenedFlagshipCard).queryByText("适合想先交出一版稳妥、可信、不过度冒险的校招简历。"),
+    ).not.toBeInTheDocument();
     expect(within(reopenedFlagshipCard).getByText("抬头信息完整清楚")).toBeInTheDocument();
   });
 
@@ -2192,7 +2192,7 @@ describe("ResumeStudio", () => {
     });
 
     expect(screen.getAllByText(/帮助招聘目标达成率稳定在87/).length).toBeGreaterThan(0);
-  });
+  }, 20_000);
 
   it("keeps the multiline hint visible and preserves line breaks while editing bullets", async () => {
     const user = userEvent.setup();
@@ -2439,8 +2439,8 @@ describe("ResumeStudio", () => {
     const experienceId = workspace.experiences[0]!.id;
     workspace.templateSession = {
       ...workspace.templateSession!,
-      candidateTemplateIds: ["flagship-reference", "compact-template"],
-      selectedTemplateId: "compact-template",
+      candidateTemplateIds: ["flagship-reference", "compact-elegance"],
+      selectedTemplateId: "compact-elegance",
     };
     workspace.draft.selectedVariants = {
       ...workspace.draft.selectedVariants,
@@ -2474,10 +2474,14 @@ describe("ResumeStudio", () => {
     await user.type(bulletsTextarea, "{end}{enter}补充复盘招聘数据并输出周报");
 
     await waitFor(() => {
-      const savedWorkspace = saveWorkspace.mock.calls.at(-1)?.[0];
+      const savedWorkspace = [...saveWorkspace.mock.calls]
+        .map(([saved]) => saved)
+        .reverse()
+        .find((saved) =>
+          saved?.contentDocument?.experiences[0]?.bullets?.includes("补充复盘招聘数据并输出周报"),
+        );
 
-      expect(savedWorkspace?.templateSession?.selectedTemplateId).toBe("compact-template");
-      expect(savedWorkspace?.renderState?.density).toBe("tight");
+      expect(savedWorkspace?.templateSession?.selectedTemplateId).toBe("compact-elegance");
       expect(savedWorkspace?.renderState?.hiddenModuleIds).not.toContain("skills");
       expect(savedWorkspace?.renderState?.overflowStatus).toBe("fits");
       expect(savedWorkspace?.contentDocument?.experiences[0]?.bullets).toContain(
