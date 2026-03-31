@@ -155,40 +155,40 @@ const curatedTemplateManifestById = new Map(
 
 const inferTemplateDisplayName = (manifest: TemplateManifestInput) => {
   if (manifest.sections.hero.variant === "classic-banner") {
-    return "重点突出";
+    return "上半页抢眼版";
   }
 
   if (
     manifest.compactionPolicy.density === "tight" ||
     manifest.sections.experience.variant === "compact-cards"
   ) {
-    return "紧凑清晰";
+    return "一页紧凑版";
   }
 
   if (manifest.sections.hero.variant === "centered-name-minimal") {
-    return "轻简清楚";
+    return "极简直给版";
   }
 
-  return "稳妥简洁";
+  return "稳妥通用版";
 };
 
 const inferTemplateDescription = (manifest: TemplateManifestInput) => {
   if (manifest.sections.hero.variant === "classic-banner") {
-    return "标题更醒目，适合把亮点和结果往上提。";
+    return "先把页头和结果抬到上半页，适合想先抓住注意力的人。";
   }
 
   if (
     manifest.compactionPolicy.density === "tight" ||
     manifest.sections.experience.variant === "compact-cards"
   ) {
-    return "排版更紧凑，适合信息稍多的一页简历。";
+    return "先把更多内容压进一页，适合经历和技能都偏多的人。";
   }
 
   if (manifest.sections.hero.variant === "centered-name-minimal") {
-    return "结构更轻，适合先快速看清关键信息。";
+    return "减少装饰和说明，适合想让事实自己说话的人。";
   }
 
-  return "结构稳妥，适合先做出一版清楚的校招简历。";
+  return "先把姓名、教育和经历都讲清楚，适合大多数校招简历。";
 };
 
 const inferTemplateFamilyId = (manifest: TemplateManifestInput): TemplateFamilyId => {

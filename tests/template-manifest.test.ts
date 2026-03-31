@@ -99,7 +99,7 @@ describe("template manifest", () => {
 
     expect(result.success).toBe(true);
     expect(result.data).toMatchObject({
-      displayName: "稳妥简洁",
+      displayName: "稳妥通用版",
       familyId: "calm-academic",
       familyLabel: "冷静学术",
     });
@@ -229,8 +229,8 @@ describe("template manifest", () => {
     expect(getTemplateManifestById("flagship-reference")).toMatchObject({
       version: "v1",
       templateId: "flagship-reference",
-      displayName: "稳妥简洁",
-      description: "信息排布最稳，适合大多数校招简历。",
+      displayName: "稳妥通用版",
+      description: "先把姓名、教育和经历都讲清楚，适合大多数校招简历。",
       familyId: "warm-professional",
       familyLabel: "温暖专业",
       fitSummary: TEMPLATE_FAMILY_LIBRARY.find((manifest) => manifest.templateId === "flagship-reference")
@@ -488,7 +488,7 @@ describe("template manifest", () => {
     expect(validated[0]).toMatchObject({
       templateId: "template-1",
       name: "经典单栏",
-      displayName: "重点突出",
+      displayName: "上半页抢眼版",
       tone: "academic",
       page: {
         layout: "single-column",

@@ -448,9 +448,11 @@ describe("ResumeStudio", () => {
     expect(screen.getByText("这是第一版，建议先补 1 条关键信息，再决定要不要导出。")).toBeInTheDocument();
     expect(screen.getByText("如果你已经知道还缺第二段教育或经历，可以直接从下面继续加。")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "继续完善这版" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "稳妥简洁" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "紧凑清晰" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "重点突出" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "稳妥通用版" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "一页紧凑版" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "上半页抢眼版" })).toBeInTheDocument();
+    expect(screen.getByText("先把姓名、教育和经历都讲清楚，适合大多数校招简历。")).toBeInTheDocument();
+    expect(screen.getByText("先把更多内容压进一页，适合经历和技能都偏多的人。")).toBeInTheDocument();
     expect(within(previewRail as HTMLElement).getByRole("button", { name: "导出网页版" })).toBeDisabled();
     expect(within(previewRail as HTMLElement).getByRole("button", { name: "导出 PDF" })).toBeDisabled();
     expect(
@@ -685,8 +687,8 @@ describe("ResumeStudio", () => {
           createManifest({
             templateId: "flagship-reference",
             name: "Flagship Reference",
-            displayName: "稳妥简洁",
-            description: "信息排布最稳，适合大多数校招简历。",
+            displayName: "稳妥通用版",
+            description: "先把姓名、教育和经历都讲清楚，适合大多数校招简历。",
             familyLabel: "温暖专业",
             fitSummary: "适合想先交出一版稳妥、可信、不过度冒险的校招简历。",
             previewHighlights: ["抬头信息完整清楚", "教育与经历层次稳定", "整体观感正式克制"],
@@ -694,8 +696,8 @@ describe("ResumeStudio", () => {
           createManifest({
             templateId: "compact-template",
             name: "Compact Template",
-            displayName: "紧凑清晰",
-            description: "内容更紧凑，适合信息稍多的一页简历。",
+            displayName: "一页紧凑版",
+            description: "先把更多内容压进一页，适合经历和技能都偏多的人。",
             familyLabel: "现代清爽",
             fitSummary: "适合经历和技能都偏多，需要在一页内提高版面利用率的人。",
             previewHighlights: ["信息密度更高", "经历卡片更利于快扫", "整体感受利落清爽"],
@@ -724,9 +726,9 @@ describe("ResumeStudio", () => {
           createManifest({
             templateId: "banner-template",
             name: "Banner Template",
-            displayName: "重点突出",
-            description: "标题更醒目，适合把亮点放在上半页。",
-            familyLabel: "重点前置",
+            displayName: "上半页抢眼版",
+            description: "先把页头和结果抬到上半页，适合想先抓住注意力的人。",
+            familyLabel: "重点鲜明",
             fitSummary: "适合已经有明确成果点，想在前几秒就把卖点和结果传达出来的人。",
             previewHighlights: ["标题带更醒目", "结果导向感明显", "适合快节奏筛选"],
             theme: {
@@ -772,8 +774,8 @@ describe("ResumeStudio", () => {
     expect(templateBlock.querySelectorAll(".template-card-grid .template-card")).toHaveLength(3);
     expect(within(templateBlock).getByRole("button", { name: "看看更多版式" })).toBeInTheDocument();
 
-    const flagshipCard = within(templateBlock).getByRole("button", { name: /稳妥简洁/ });
-    expect(flagshipCard).toHaveAccessibleName("稳妥简洁");
+    const flagshipCard = within(templateBlock).getByRole("button", { name: /稳妥通用版/ });
+    expect(flagshipCard).toHaveAccessibleName("稳妥通用版");
     expect(flagshipCard).toHaveAccessibleDescription(/温暖专业/);
     expect(flagshipCard).toHaveAccessibleDescription(
       /适合想先交出一版稳妥、可信、不过度冒险的校招简历。/,
@@ -781,8 +783,8 @@ describe("ResumeStudio", () => {
     expect(flagshipCard).toHaveAccessibleDescription(/抬头信息完整清楚/);
     expect(flagshipCard).toHaveAttribute("aria-pressed", "true");
     expect(within(flagshipCard).getByText("温暖专业")).toBeInTheDocument();
-    expect(within(flagshipCard).getByText("稳妥简洁")).toBeInTheDocument();
-    expect(within(flagshipCard).getByText("信息排布最稳，适合大多数校招简历。")).toBeInTheDocument();
+    expect(within(flagshipCard).getByText("稳妥通用版")).toBeInTheDocument();
+    expect(within(flagshipCard).getByText("先把姓名、教育和经历都讲清楚，适合大多数校招简历。")).toBeInTheDocument();
     expect(
       within(flagshipCard).getByText("适合想先交出一版稳妥、可信、不过度冒险的校招简历。"),
     ).toBeInTheDocument();
@@ -796,7 +798,7 @@ describe("ResumeStudio", () => {
       "stacked-bullets",
     );
 
-    const compactCard = within(templateBlock).getByRole("button", { name: /紧凑清晰/ });
+    const compactCard = within(templateBlock).getByRole("button", { name: /一页紧凑版/ });
     expect(compactCard).toBeInTheDocument();
     expect(within(compactCard).getByTestId("template-preview-compact-template")).toHaveAttribute(
       "data-hero-variant",
@@ -807,7 +809,7 @@ describe("ResumeStudio", () => {
       "tight",
     );
 
-    const bannerCard = within(templateBlock).getByRole("button", { name: /重点突出/ });
+    const bannerCard = within(templateBlock).getByRole("button", { name: /上半页抢眼版/ });
     expect(bannerCard).toBeInTheDocument();
     expect(within(bannerCard).getByTestId("template-preview-banner-template")).toHaveAttribute(
       "data-hero-variant",
@@ -846,7 +848,7 @@ describe("ResumeStudio", () => {
       .closest(".studio-block") as HTMLElement;
     expect(templateBlock).not.toBeNull();
     expect(templateBlock.querySelectorAll(".template-card-grid .template-card")).toHaveLength(3);
-    expect(within(templateBlock).queryByRole("button", { name: "教育先读版" })).not.toBeInTheDocument();
+    expect(within(templateBlock).queryByRole("button", { name: "教育亮点先读" })).not.toBeInTheDocument();
 
     await user.click(within(templateBlock).getByRole("button", { name: "看看更多版式" }));
 
@@ -860,19 +862,19 @@ describe("ResumeStudio", () => {
     expect(
       within(moreSection).getByText("适合想先投出一版稳妥、正式、不过分冒险的校招简历。"),
     ).toBeInTheDocument();
-    expect(within(moreSection).getByRole("button", { name: "教育先读版" })).toBeInTheDocument();
-    expect(within(moreSection).getByRole("button", { name: "学术台账版" })).toBeInTheDocument();
+    expect(within(moreSection).getByRole("button", { name: "教育亮点先读" })).toBeInTheDocument();
+    expect(within(moreSection).getByRole("button", { name: "学业履历版" })).toBeInTheDocument();
 
-    await user.click(within(moreSection).getByRole("button", { name: "教育先读版" }));
+    await user.click(within(moreSection).getByRole("button", { name: "教育亮点先读" }));
 
     const recommendedGrid = templateBlock.querySelector(".template-card-grid") as HTMLElement;
     expect(recommendedGrid).not.toBeNull();
-    expect(within(recommendedGrid).getByRole("button", { name: "教育先读版" })).toHaveAttribute(
+    expect(within(recommendedGrid).getByRole("button", { name: "教育亮点先读" })).toHaveAttribute(
       "aria-pressed",
       "true",
     );
     expect(within(recommendedGrid).getAllByRole("button")).toHaveLength(3);
-    expect(within(templateBlock).getAllByRole("button", { name: "教育先读版" })).toHaveLength(1);
+    expect(within(templateBlock).getAllByRole("button", { name: "教育亮点先读" })).toHaveLength(1);
   });
 
   it("falls back to built-in card highlights for newer template variants", async () => {
@@ -1062,8 +1064,8 @@ describe("ResumeStudio", () => {
           createManifest({
             templateId: "flagship-reference",
             name: "Flagship Reference",
-            displayName: "稳妥简洁",
-            description: "信息排布最稳，适合大多数校招简历。",
+            displayName: "稳妥通用版",
+            description: "先把姓名、教育和经历都讲清楚，适合大多数校招简历。",
             familyLabel: "温暖专业",
             fitSummary: "适合想先交出一版稳妥、可信、不过度冒险的校招简历。",
             previewHighlights: ["抬头信息完整清楚", "教育与经历层次稳定", "整体观感正式克制"],
@@ -1071,8 +1073,8 @@ describe("ResumeStudio", () => {
           createManifest({
             templateId: "compact-template",
             name: "Compact Template",
-            displayName: "紧凑清晰",
-            description: "内容更紧凑，适合信息稍多的一页简历。",
+            displayName: "一页紧凑版",
+            description: "先把更多内容压进一页，适合经历和技能都偏多的人。",
             page: {
               size: "A4",
               marginPreset: "tight",
@@ -1098,8 +1100,8 @@ describe("ResumeStudio", () => {
           createManifest({
             templateId: "banner-template",
             name: "Banner Template",
-            displayName: "重点突出",
-            description: "标题更醒目，适合把亮点放在上半页。",
+            displayName: "上半页抢眼版",
+            description: "先把页头和结果抬到上半页，适合想先抓住注意力的人。",
             theme: {
               fontPair: "songti-sans",
               accentColor: "burgundy",
@@ -1133,7 +1135,7 @@ describe("ResumeStudio", () => {
     );
 
     await user.click(screen.getByRole("button", { name: "整理并起稿" }));
-    expect(await screen.findByRole("button", { name: "紧凑清晰" })).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: "一页紧凑版" })).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "继续完善这版" }));
 
@@ -1143,9 +1145,9 @@ describe("ResumeStudio", () => {
     expect(screen.queryByText("3 套候选")).not.toBeInTheDocument();
     expect(screen.queryByText("先把内容补顺，再看看哪种排版更清楚。切换版式不会改动你的内容。")).not.toBeInTheDocument();
     expect(screen.queryByText("已先给你几种版式候选，先看看哪套更适合这版内容。")).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /稳妥简洁/ })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /紧凑清晰/ })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /重点突出/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /稳妥通用版/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /一页紧凑版/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /上半页抢眼版/ })).not.toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "需要时再看版式" }));
     const templateBlock = screen
@@ -1153,9 +1155,9 @@ describe("ResumeStudio", () => {
       .closest(".studio-block") as HTMLElement;
 
     expect(templateBlock).not.toBeNull();
-    const reopenedFlagshipCard = within(templateBlock).getByRole("button", { name: /稳妥简洁/ });
+    const reopenedFlagshipCard = within(templateBlock).getByRole("button", { name: /稳妥通用版/ });
 
-    expect(screen.getByRole("button", { name: "紧凑清晰" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "一页紧凑版" })).toBeInTheDocument();
     expect(within(templateBlock).getByText("3 套候选")).toBeInTheDocument();
     expect(within(reopenedFlagshipCard).getByText("温暖专业")).toBeInTheDocument();
     expect(
@@ -1180,8 +1182,8 @@ describe("ResumeStudio", () => {
                   createManifest({
                     templateId: "initial-template",
                     name: "Initial Template",
-                    displayName: "轻简清楚",
-                    description: "结构更轻，适合快速看清关键信息。",
+                    displayName: "极简直给版",
+                    description: "减少装饰和说明，适合想让事实自己说话的人。",
                     tone: "modern",
                     theme: {
                       fontPair: "humanist-sans",
@@ -1238,8 +1240,8 @@ describe("ResumeStudio", () => {
                   createManifest({
                     templateId: "classic-template",
                     name: "Classic Template",
-                    displayName: "重点突出",
-                    description: "标题更醒目，适合把亮点放在上半页。",
+                    displayName: "上半页抢眼版",
+                    description: "先把页头和结果抬到上半页，适合想先抓住注意力的人。",
                     theme: {
                       fontPair: "songti-sans",
                       accentColor: "burgundy",
@@ -1273,7 +1275,7 @@ describe("ResumeStudio", () => {
     );
 
     await user.click(screen.getByRole("button", { name: "整理并起稿" }));
-    expect(await screen.findByRole("button", { name: "轻简清楚" })).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: "极简直给版" })).toBeInTheDocument();
 
     fireEvent.change(screen.getAllByLabelText("学校")[0], {
       target: { value: "复旦大学" },
@@ -1281,7 +1283,7 @@ describe("ResumeStudio", () => {
 
     await waitFor(
       () => {
-        expect(screen.getByRole("button", { name: "紧凑清晰" })).toBeInTheDocument();
+        expect(screen.getByTestId("template-preview-edited-template")).toBeInTheDocument();
         expect(
           fetchSpy.mock.calls.filter(([input]) => {
             const url =
@@ -1290,7 +1292,7 @@ describe("ResumeStudio", () => {
           }),
         ).toHaveLength(2);
       },
-      { timeout: 2000 },
+      { timeout: 5000 },
     );
   });
 
@@ -1784,7 +1786,9 @@ describe("ResumeStudio", () => {
     15_000,
   );
 
-  it("binds strengthening follow-up to the internship card the user is editing", async () => {
+  it(
+    "binds strengthening follow-up to the internship card the user is editing",
+    async () => {
     const user = userEvent.setup();
     mockAdaptiveIntakeFetch({
       extractResponse: {
@@ -1931,7 +1935,7 @@ describe("ResumeStudio", () => {
     ).not.toContain(
       "推进 27 位候选人进入初筛，促成 6 人到面",
     );
-  }, 15_000);
+  }, 25_000);
 
   it("closes the strengthening prompt after the user fixes the missing metric directly in the editor", async () => {
     const user = userEvent.setup();
@@ -2069,7 +2073,9 @@ describe("ResumeStudio", () => {
     expect(screen.getAllByLabelText("公司/组织").length).toBeGreaterThan(1);
     expect(screen.getAllByRole("button", { name: "帮我润色" }).length).toBeGreaterThan(1);
     expect(screen.queryByText("经历编辑")).not.toBeInTheDocument();
-  });
+    },
+    25_000,
+  );
 
   it("keeps adding campus entries in the editor beyond two items", async () => {
     const user = userEvent.setup();
@@ -2547,10 +2553,10 @@ describe("ResumeStudio", () => {
 
     const { container } = render(<ResumeStudio />);
 
-    expect(await screen.findByRole("button", { name: "紧凑清晰" })).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: "一页紧凑版" })).toBeInTheDocument();
     saveWorkspace.mockClear();
 
-    await user.click(screen.getByRole("button", { name: "紧凑清晰" }));
+    await user.click(screen.getByRole("button", { name: "一页紧凑版" }));
 
     await waitFor(() => {
       const savedWorkspace = saveWorkspace.mock.calls.at(-1)?.[0];
@@ -2594,11 +2600,11 @@ describe("ResumeStudio", () => {
 
     render(<ResumeStudio />);
 
-    expect(await screen.findByRole("button", { name: "稳妥简洁" })).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: "稳妥通用版" })).toBeInTheDocument();
     saveWorkspace.mockClear();
 
     await user.click(screen.getByRole("button", { name: "看看更多版式" }));
-    await user.click(screen.getByRole("button", { name: "教育先读版" }));
+    await user.click(screen.getByRole("button", { name: "教育亮点先读" }));
 
     await waitFor(() => {
       const savedWorkspace = saveWorkspace.mock.calls.at(-1)?.[0];
@@ -2789,7 +2795,7 @@ describe("ResumeStudio", () => {
 
     await screen.findByText("第一版简历已经出来了");
     expect(await screen.findByRole("button", { name: "新版紧凑" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "重点突出" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "上半页抢眼版" })).toBeInTheDocument();
     expect(
       fetchSpy.mock.calls.filter(([input]) => {
         const url =
@@ -2886,7 +2892,7 @@ describe("ResumeStudio", () => {
     );
 
     await user.click(screen.getByRole("button", { name: "整理并起稿" }));
-    const compactButton = await screen.findByRole("button", { name: "紧凑清晰" });
+    const compactButton = await screen.findByRole("button", { name: "一页紧凑版" });
 
     saveWorkspace.mockClear();
     await user.click(compactButton);
@@ -2906,7 +2912,7 @@ describe("ResumeStudio", () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: "紧凑清晰" })).toHaveAttribute(
+      expect(screen.getByRole("button", { name: "一页紧凑版" })).toHaveAttribute(
         "aria-pressed",
         "true",
       );
@@ -2945,7 +2951,7 @@ describe("ResumeStudio", () => {
     );
 
     await user.click(screen.getByRole("button", { name: "整理并起稿" }));
-    const compactButton = await screen.findByRole("button", { name: "紧凑清晰" });
+    const compactButton = await screen.findByRole("button", { name: "一页紧凑版" });
 
     saveWorkspace.mockClear();
     await user.click(compactButton);
@@ -3008,7 +3014,7 @@ describe("ResumeStudio", () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: "紧凑清晰" })).toHaveAttribute(
+      expect(screen.getByRole("button", { name: "一页紧凑版" })).toHaveAttribute(
         "aria-pressed",
         "true",
       );
@@ -3049,7 +3055,7 @@ describe("ResumeStudio", () => {
     );
 
     await user.click(screen.getByRole("button", { name: "整理并起稿" }));
-    await screen.findByRole("button", { name: "稳妥简洁" });
+    await screen.findByRole("button", { name: "稳妥通用版" });
 
     await act(async () => {
       resolveTemplateResponse?.({

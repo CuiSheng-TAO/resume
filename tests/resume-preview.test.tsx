@@ -112,8 +112,8 @@ describe("ResumePreview", () => {
       version: "v1" as const,
       templateId: "flagship-reference",
       name: "Flagship Reference",
-      displayName: "稳妥简洁",
-      description: "信息排布最稳，适合大多数校招简历。",
+      displayName: "稳妥通用版",
+      description: "先把姓名、教育和经历都讲清楚，适合大多数校招简历。",
       tone: "academic" as const,
       page: {
         size: "A4" as const,
