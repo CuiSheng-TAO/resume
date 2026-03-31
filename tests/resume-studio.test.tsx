@@ -784,9 +784,36 @@ describe("ResumeStudio", () => {
       within(flagshipCard).getByText("适合想先交出一版稳妥、可信、不过度冒险的校招简历。"),
     ).toBeInTheDocument();
     expect(within(flagshipCard).getByText("抬头信息完整清楚")).toBeInTheDocument();
+    expect(within(flagshipCard).getByTestId("template-preview-flagship-reference")).toHaveAttribute(
+      "data-hero-variant",
+      "name-left-photo-right",
+    );
+    expect(within(flagshipCard).getByTestId("template-preview-flagship-reference")).toHaveAttribute(
+      "data-experience-variant",
+      "stacked-bullets",
+    );
 
-    expect(within(templateBlock).getByRole("button", { name: /紧凑清晰/ })).toBeInTheDocument();
-    expect(within(templateBlock).getByRole("button", { name: /重点突出/ })).toBeInTheDocument();
+    const compactCard = within(templateBlock).getByRole("button", { name: /紧凑清晰/ });
+    expect(compactCard).toBeInTheDocument();
+    expect(within(compactCard).getByTestId("template-preview-compact-template")).toHaveAttribute(
+      "data-hero-variant",
+      "centered-name-minimal",
+    );
+    expect(within(compactCard).getByTestId("template-preview-compact-template")).toHaveAttribute(
+      "data-density",
+      "tight",
+    );
+
+    const bannerCard = within(templateBlock).getByRole("button", { name: /重点突出/ });
+    expect(bannerCard).toBeInTheDocument();
+    expect(within(bannerCard).getByTestId("template-preview-banner-template")).toHaveAttribute(
+      "data-hero-variant",
+      "classic-banner",
+    );
+    expect(within(bannerCard).getByTestId("template-preview-banner-template")).toHaveAttribute(
+      "data-experience-variant",
+      "metric-first",
+    );
     expect(screen.queryByText("Flagship Reference")).not.toBeInTheDocument();
     expect(screen.getByText("已先给你几种版式候选，先看看哪套更适合这版内容。")).toBeInTheDocument();
   });

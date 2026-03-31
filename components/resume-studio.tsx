@@ -623,6 +623,64 @@ const buildTemplateCardHighlights = (manifest: TemplateManifest) =>
         TEMPLATE_DENSITY_LABELS[manifest.compactionPolicy.density],
       ];
 
+const buildTemplatePreviewSectionVariant = (
+  manifest: TemplateManifest,
+  section: "education" | "experience" | "awards" | "skills",
+) => {
+  switch (section) {
+    case "education":
+      return manifest.sections.education.variant;
+    case "experience":
+      return manifest.sections.experience.variant;
+    case "awards":
+      return manifest.sections.awards.variant;
+    case "skills":
+      return manifest.sections.skills.variant;
+    default:
+      return "";
+  }
+};
+
+const renderTemplateCardPreview = (manifest: TemplateManifest) => (
+  <span
+    aria-hidden="true"
+    className={`template-card-preview template-card-preview--${manifest.theme.accentColor}`}
+    data-density={manifest.compactionPolicy.density}
+    data-experience-variant={manifest.sections.experience.variant}
+    data-hero-variant={manifest.sections.hero.variant}
+    data-testid={`template-preview-${manifest.templateId}`}
+  >
+    <span className="template-card-preview-paper">
+      <span className={`template-card-preview-hero template-card-preview-hero--${manifest.sections.hero.variant}`}>
+        <span className="template-card-preview-band" />
+        <span className="template-card-preview-hero-row">
+          <span className="template-card-preview-hero-main">
+            <span className="template-card-preview-title" />
+            <span className="template-card-preview-meta" />
+            <span className="template-card-preview-meta template-card-preview-meta-short" />
+          </span>
+          <span className="template-card-preview-photo" />
+        </span>
+      </span>
+      <span className={`template-card-preview-body template-card-preview-body--${manifest.compactionPolicy.density}`}>
+        {manifest.sectionOrder.map((section) => (
+          <span
+            className={`template-card-preview-section template-card-preview-section--${section} template-card-preview-section-style--${buildTemplatePreviewSectionVariant(manifest, section)}`}
+            key={`${manifest.templateId}-${section}`}
+          >
+            <span className="template-card-preview-section-bar" />
+            <span className="template-card-preview-section-lines">
+              <span className="template-card-preview-line template-card-preview-line-strong" />
+              <span className="template-card-preview-line" />
+              <span className="template-card-preview-line template-card-preview-line-short" />
+            </span>
+          </span>
+        ))}
+      </span>
+    </span>
+  </span>
+);
+
 const EDUCATION_HIGHLIGHT_FIELDS = [
   { label: "加权平均分", placeholder: "例如：93.11" },
   { label: "综合排名", placeholder: "例如：3/89" },
@@ -2760,6 +2818,7 @@ export function ResumeStudio() {
                             <span className="sr-only" id={descriptionId}>
                               {accessibilityDescription}
                             </span>
+                            {renderTemplateCardPreview(manifest)}
                             <span className="template-card-family">{manifest.familyLabel}</span>
                             <span className="template-card-name">{manifest.displayName}</span>
                             <span className="template-card-description">{manifest.description}</span>
