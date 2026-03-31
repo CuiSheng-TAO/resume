@@ -1,6 +1,6 @@
 import type { ResumeContentDocument } from "@/lib/resume-document";
 import { TEMPLATE_FAMILY_LIBRARY } from "@/lib/template-library";
-import type { CuratedTemplateManifest } from "@/lib/template-types";
+import type { CuratedTemplateManifest, TemplateManifest } from "@/lib/template-types";
 
 type TemplateMatchingContentInput = {
   [key: string]: unknown;
@@ -42,6 +42,11 @@ type ContentFeatures = {
   isDense: boolean;
   isSparse: boolean;
 };
+
+type DiversityComparableTemplate = Pick<
+  TemplateManifest,
+  "templateId" | "familyId" | "sections" | "compactionPolicy"
+>;
 
 const ACADEMIC_KEYWORDS = [
   "academic",
@@ -459,7 +464,7 @@ export const scoreTemplateFit = (
 
 const scoreTemplateDiversity = (
   template: CuratedTemplateManifest,
-  selectedTemplates: CuratedTemplateManifest[],
+  selectedTemplates: DiversityComparableTemplate[],
 ) => {
   if (selectedTemplates.length === 0) {
     return 0;
@@ -557,4 +562,82 @@ export const shortlistTemplateLibrary = (
   }
 
   return selectedTemplates;
+};
+
+export const rankAdditionalTemplateLibrary = (
+  content: TemplateMatchingContentInput,
+  recommendedTemplates: readonly DiversityComparableTemplate[],
+): CuratedTemplateManifest[] => {
+  const coveredFamilyIds = new Set(
+    recommendedTemplates
+      .map((template) => template.familyId)
+      .filter((familyId): familyId is NonNullable<typeof familyId> => Boolean(familyId)),
+  );
+  const recommendedTemplateIds = new Set(
+    recommendedTemplates.map((template) => template.templateId),
+  );
+  const scoredTemplates = [...TEMPLATE_FAMILY_LIBRARY]
+    .filter((template) => !recommendedTemplateIds.has(template.templateId))
+    .map((template, index) => ({
+      template,
+      index,
+      score: scoreTemplateFit(content, template),
+    }))
+    .sort((left, right) => {
+      if (right.score !== left.score) {
+        return right.score - left.score;
+      }
+
+      return left.index - right.index;
+    });
+
+  const orderedTemplates: CuratedTemplateManifest[] = [];
+  const selectedTemplates = [...recommendedTemplates];
+  const remainingTemplates = [...scoredTemplates];
+
+  while (remainingTemplates.length > 0) {
+    const uncoveredFamilyTemplates = remainingTemplates.filter(
+      (candidate) => !coveredFamilyIds.has(candidate.template.familyId),
+    );
+    const candidatePool =
+      uncoveredFamilyTemplates.length > 0 ? uncoveredFamilyTemplates : remainingTemplates;
+    const nextSelection = candidatePool
+      .map((candidate) => ({
+        ...candidate,
+        adjustedScore: candidate.score + scoreTemplateDiversity(candidate.template, selectedTemplates),
+      }))
+      .sort((left, right) => {
+        if (right.adjustedScore !== left.adjustedScore) {
+          return right.adjustedScore - left.adjustedScore;
+        }
+
+        if (right.score !== left.score) {
+          return right.score - left.score;
+        }
+
+        return left.index - right.index;
+      })[0];
+
+    if (!nextSelection) {
+      break;
+    }
+
+    orderedTemplates.push(nextSelection.template);
+    selectedTemplates.push(nextSelection.template);
+    if (nextSelection.template.familyId) {
+      coveredFamilyIds.add(nextSelection.template.familyId);
+    }
+
+    const nextIndex = remainingTemplates.findIndex(
+      (candidate) => candidate.template.templateId === nextSelection.template.templateId,
+    );
+
+    if (nextIndex >= 0) {
+      remainingTemplates.splice(nextIndex, 1);
+    } else {
+      break;
+    }
+  }
+
+  return orderedTemplates;
 };

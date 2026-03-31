@@ -24,6 +24,7 @@ import {
   type IntakeProgress,
   type IntakeQuestionPlan,
 } from "@/lib/intake-engine";
+import { rankAdditionalTemplateLibrary } from "@/lib/template-matching";
 import {
   applyLayoutSuggestion,
   applyLayoutSuggestionSequence,
@@ -40,7 +41,6 @@ import {
   type ResumeContentDocument,
 } from "@/lib/resume-document";
 import { clearWorkspace, loadWorkspace, saveWorkspace } from "@/lib/storage";
-import { TEMPLATE_FAMILY_LIBRARY } from "@/lib/template-library";
 import {
   finalizeTemplateManifestCandidates,
   resolveTemplateManifestById,
@@ -2544,13 +2544,11 @@ export function ResumeStudio() {
     editorFlowMode === "strengthening" ? "需要时再看版式" : "先看版式选项";
   const recommendedTemplateManifests = workspace?.templateSession?.candidateManifests ?? [];
   const additionalTemplateManifests =
-    editorFlowMode === "strengthening"
+    editorFlowMode === "strengthening" || !workspace?.contentDocument
       ? []
-      : TEMPLATE_FAMILY_LIBRARY.filter(
-          (manifest) =>
-            !recommendedTemplateManifests.some(
-              (candidateManifest) => candidateManifest.templateId === manifest.templateId,
-            ),
+      : rankAdditionalTemplateLibrary(
+          workspace.contentDocument,
+          recommendedTemplateManifests,
         );
   const isStrengtheningSectionExpanded = (section: StrengtheningSectionKey) =>
     editorFlowMode !== "strengthening" ||

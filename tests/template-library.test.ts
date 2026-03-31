@@ -2,7 +2,11 @@ import { describe, expect, it } from "vitest";
 
 import type { ResumeContentDocument } from "@/lib/resume-document";
 import { createTemplateManifestSignature } from "@/lib/template-manifest";
-import { scoreTemplateFit, shortlistTemplateLibrary } from "@/lib/template-matching";
+import {
+  rankAdditionalTemplateLibrary,
+  scoreTemplateFit,
+  shortlistTemplateLibrary,
+} from "@/lib/template-matching";
 import {
   TEMPLATE_FAMILY_LIBRARY,
   TEMPLATE_FAMILY_LABELS,
@@ -409,5 +413,21 @@ describe("template library", () => {
     };
 
     expect(shortlistTemplateLibrary(routeStyleContentDocument, 2).map((template) => template.templateId)).toHaveLength(2);
+  });
+
+  it("prioritizes a missing family first when ranking additional templates", () => {
+    const contentDocument = createContentDocument();
+    const recommendedTemplates = [
+      TEMPLATE_FAMILY_LIBRARY.find((template) => template.templateId === "flagship-reference")!,
+      TEMPLATE_FAMILY_LIBRARY.find((template) => template.templateId === "compact-elegance")!,
+      TEMPLATE_FAMILY_LIBRARY.find((template) => template.templateId === "classic-banner")!,
+    ];
+
+    const additionalTemplates = rankAdditionalTemplateLibrary(contentDocument, recommendedTemplates);
+
+    expect(additionalTemplates[0]?.familyId).toBe("calm-academic");
+    expect(additionalTemplates[0]?.templateId).not.toBe("flagship-reference");
+    expect(additionalTemplates[0]?.templateId).not.toBe("compact-elegance");
+    expect(additionalTemplates[0]?.templateId).not.toBe("classic-banner");
   });
 });
