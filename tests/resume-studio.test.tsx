@@ -769,7 +769,8 @@ describe("ResumeStudio", () => {
       .closest(".studio-block") as HTMLElement;
 
     expect(templateBlock).not.toBeNull();
-    expect(within(templateBlock).getAllByRole("button")).toHaveLength(3);
+    expect(templateBlock.querySelectorAll(".template-card-grid .template-card")).toHaveLength(3);
+    expect(within(templateBlock).getByRole("button", { name: "看看更多版式" })).toBeInTheDocument();
 
     const flagshipCard = within(templateBlock).getByRole("button", { name: /稳妥简洁/ });
     expect(flagshipCard).toHaveAccessibleName("稳妥简洁");
@@ -818,6 +819,50 @@ describe("ResumeStudio", () => {
     );
     expect(screen.queryByText("Flagship Reference")).not.toBeInTheDocument();
     expect(screen.getByText("已先给你几种版式候选，先看看哪套更适合这版内容。")).toBeInTheDocument();
+  });
+
+  it("keeps additional templates collapsed until requested and promotes one into the recommended set", async () => {
+    const user = userEvent.setup();
+    mockAdaptiveIntakeFetch({});
+    render(<ResumeStudio />);
+
+    await user.click(screen.getByRole("button", { name: "导入旧材料" }));
+    await user.type(
+      screen.getByLabelText("粘贴现有简历或自我介绍"),
+      [
+        "向金涛",
+        "目标岗位：招聘实习生",
+        "电话：18973111415",
+        "邮箱：3294182452@qq.com",
+        "所在地：深圳",
+        "教育：中南财经政法大学 人力资源管理 2022.09-2026.06",
+        "经历：微派网络科技有限公司 招聘实习生 2025.10-2026.02 支持运营、美术、技术等10余个岗位类型招聘，3个月推进13位候选人入职，招聘目标达成率87%。",
+      ].join("\n"),
+    );
+
+    await user.click(screen.getByRole("button", { name: "整理并起稿" }));
+
+    const templateBlock = (await screen.findByRole("heading", { name: "看看哪套版式更适合这版简历" }))
+      .closest(".studio-block") as HTMLElement;
+    expect(templateBlock).not.toBeNull();
+    expect(templateBlock.querySelectorAll(".template-card-grid .template-card")).toHaveLength(3);
+    expect(within(templateBlock).queryByRole("button", { name: "教育先读版" })).not.toBeInTheDocument();
+
+    await user.click(within(templateBlock).getByRole("button", { name: "看看更多版式" }));
+
+    const moreSection = within(templateBlock).getByTestId("more-template-options");
+    expect(within(moreSection).getByRole("button", { name: "教育先读版" })).toBeInTheDocument();
+
+    await user.click(within(moreSection).getByRole("button", { name: "教育先读版" }));
+
+    const recommendedGrid = templateBlock.querySelector(".template-card-grid") as HTMLElement;
+    expect(recommendedGrid).not.toBeNull();
+    expect(within(recommendedGrid).getByRole("button", { name: "教育先读版" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(within(recommendedGrid).getAllByRole("button")).toHaveLength(3);
+    expect(within(templateBlock).getAllByRole("button", { name: "教育先读版" })).toHaveLength(1);
   });
 
   it("falls back to built-in card highlights for newer template variants", async () => {
@@ -2509,6 +2554,52 @@ describe("ResumeStudio", () => {
     expect(screen.getByDisplayValue("微派网络科技有限公司")).toBeInTheDocument();
     expect(container.querySelector(".resume-template--compact-template")).not.toBeNull();
     expect(container.querySelector(".resume-template--flagship-reference")).toBeNull();
+  });
+
+  it("persists a promoted extra template inside the recommended shortlist", async () => {
+    const user = userEvent.setup();
+    const workspace = buildWorkspaceFromIntakeAnswers({
+      fullName: "向金涛",
+      targetRole: "招聘实习生",
+      phone: "18973111415",
+      email: "3294182452@qq.com",
+      location: "深圳",
+      education: {
+        school: "中南财经政法大学",
+        degree: "人力资源管理",
+        dateRange: "2022.09-2026.06",
+      },
+      topExperience: {
+        organization: "微派网络科技有限公司",
+        role: "招聘实习生",
+        dateRange: "2025.10-2026.02",
+        narrative:
+          "支持运营、美术、技术等10余个岗位类型招聘，3个月推进13位候选人入职，招聘目标达成率87%。",
+      },
+      skills: ["招聘", "候选人沟通", "数据分析"],
+    });
+
+    vi.spyOn(storage, "loadWorkspace").mockResolvedValue(workspace);
+    const saveWorkspace = vi.spyOn(storage, "saveWorkspace").mockResolvedValue();
+
+    render(<ResumeStudio />);
+
+    expect(await screen.findByRole("button", { name: "稳妥简洁" })).toBeInTheDocument();
+    saveWorkspace.mockClear();
+
+    await user.click(screen.getByRole("button", { name: "看看更多版式" }));
+    await user.click(screen.getByRole("button", { name: "教育先读版" }));
+
+    await waitFor(() => {
+      const savedWorkspace = saveWorkspace.mock.calls.at(-1)?.[0];
+
+      expect(savedWorkspace?.templateSession?.selectedTemplateId).toBe("warm-education-first");
+      expect(savedWorkspace?.templateSession?.candidateTemplateIds).toEqual([
+        "warm-education-first",
+        "flagship-reference",
+        "compact-elegance",
+      ]);
+    });
   });
 
   it("persists and renders the selected template section order after switching templates", async () => {

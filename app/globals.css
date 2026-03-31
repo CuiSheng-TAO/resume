@@ -205,6 +205,20 @@ button {
   margin-top: 18px;
 }
 
+.template-card-grid-secondary {
+  margin-top: 12px;
+}
+
+.template-library-panel {
+  margin-top: 16px;
+  padding-top: 6px;
+  border-top: 1px solid rgba(78, 93, 118, 0.12);
+}
+
+.template-library-expanded {
+  margin-top: 8px;
+}
+
 .starter-summary-card {
   display: grid;
   gap: 12px;
