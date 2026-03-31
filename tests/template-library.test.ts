@@ -160,6 +160,15 @@ describe("template library", () => {
     expect(new Set(signatures).size).toBe(TEMPLATE_FAMILY_LIBRARY.length);
   });
 
+  it("keeps the hero-education-experience trio unique across the catalog", () => {
+    const trioSignatures = TEMPLATE_FAMILY_LIBRARY.map(
+      (template) =>
+        `${template.sections.hero.variant}::${template.sections.education.variant}::${template.sections.experience.variant}`,
+    );
+
+    expect(new Set(trioSignatures).size).toBe(TEMPLATE_FAMILY_LIBRARY.length);
+  });
+
   it("keeps the renamed warm profile template structurally different from flagship", () => {
     const manifestById = new Map(
       TEMPLATE_FAMILY_LIBRARY.map((template) => [template.templateId, template] as const),

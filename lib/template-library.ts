@@ -228,7 +228,7 @@ const TEMPLATE_FAMILY_LIBRARY_DEFINITIONS: CuratedTemplateManifest[] = [
     familyId: "calm-academic",
     familyLabel: TEMPLATE_FAMILY_LABELS["calm-academic"],
     fitSummary: "适合有连续研究、课题或学术活动经历，想让时间推进关系更容易看懂的人。",
-    previewHighlights: ["阶段变化更清楚", "经历叙事更线性", "奖项模块更像成果补充"],
+    previewHighlights: ["阶段变化更清楚", "页头更像履历页眉", "经历叙事更线性"],
     tone: "academic",
     page: {
       size: "A4",
@@ -242,7 +242,7 @@ const TEMPLATE_FAMILY_LIBRARY_DEFINITIONS: CuratedTemplateManifest[] = [
     },
     sectionOrder: ["education", "experience", "awards", "skills"],
     sections: {
-      hero: { variant: "split-meta-band" },
+      hero: { variant: "name-left-photo-right" },
       education: { variant: "highlight-strip" },
       experience: { variant: "role-first" },
       awards: { variant: "pill-row" },
@@ -262,7 +262,7 @@ const TEMPLATE_FAMILY_LIBRARY_DEFINITIONS: CuratedTemplateManifest[] = [
     familyId: "calm-academic",
     familyLabel: TEMPLATE_FAMILY_LABELS["calm-academic"],
     fitSummary: "适合教育、研究、项目和技能都不少，需要一页内压紧信息但不显得慌乱的人。",
-    previewHighlights: ["学术风格保留", "信息密度更高", "模块切换更快"],
+    previewHighlights: ["学业信号先集中", "信息密度更高", "模块切换更快"],
     tone: "academic",
     page: {
       size: "A4",
@@ -276,8 +276,8 @@ const TEMPLATE_FAMILY_LIBRARY_DEFINITIONS: CuratedTemplateManifest[] = [
     },
     sectionOrder: ["education", "experience", "skills", "awards"],
     sections: {
-      hero: { variant: "centered-name-minimal" },
-      education: { variant: "compact-rows" },
+      hero: { variant: "split-meta-band" },
+      education: { variant: "signal-grid" },
       experience: { variant: "compact-cards" },
       awards: { variant: "inline-list" },
       skills: { variant: "label-columns" },
