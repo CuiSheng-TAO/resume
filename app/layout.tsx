@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Siamese Dream",
+  title: "校招一页简历助手",
   description: "人人都有美观简历。本地优先、HR 陪跑式的一页简历工作台。",
 };
 

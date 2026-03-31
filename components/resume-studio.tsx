@@ -2695,7 +2695,7 @@ export function ResumeStudio() {
         <div className="hero-brand">
           <div className="hero-title-lockup">
             <h1>把你的第一版简历先做出来</h1>
-            <p className="hero-subtitle">Siamese Dream</p>
+            <p className="hero-subtitle">校招一页简历助手</p>
           </div>
           <p className="hero-note">先填写基本信息，再慢慢完善成可投递的一版。</p>
         </div>
