@@ -92,7 +92,7 @@ const TEMPLATE_FAMILY_LIBRARY_DEFINITIONS: CuratedTemplateManifest[] = [
     familyId: "warm-professional",
     familyLabel: TEMPLATE_FAMILY_LABELS["warm-professional"],
     fitSummary: "适合有完整实习、项目或校园经历，想先展示做过什么和做成什么的人。",
-    previewHighlights: ["经历前置", "结果摘要更靠前", "技能与奖项更利于扫读"],
+    previewHighlights: ["经历前置", "页头更直接清楚", "结果摘要更靠前"],
     tone: "confident",
     page: {
       size: "A4",
@@ -106,7 +106,7 @@ const TEMPLATE_FAMILY_LIBRARY_DEFINITIONS: CuratedTemplateManifest[] = [
     },
     sectionOrder: ["experience", "education", "skills", "awards"],
     sections: {
-      hero: { variant: "stacked-profile-card" },
+      hero: { variant: "name-left-photo-right" },
       education: { variant: "compact-rows" },
       experience: { variant: "result-callout" },
       awards: { variant: "pill-row" },

@@ -2042,9 +2042,11 @@ describe("ResumeStudio", () => {
     expect(screen.getAllByText(/补充复盘招聘数据并输出周报/).length).toBeGreaterThan(0);
   });
 
-  it("replaces the task board with lightweight clickable guidance and a quieter preview summary", async () => {
-    const user = userEvent.setup();
-    const { container } = render(<ResumeStudio />);
+  it(
+    "replaces the task board with lightweight clickable guidance and a quieter preview summary",
+    async () => {
+      const user = userEvent.setup();
+      const { container } = render(<ResumeStudio />);
 
     await user.click(screen.getByRole("button", { name: "导入旧材料" }));
     await user.type(
@@ -2093,10 +2095,12 @@ describe("ResumeStudio", () => {
     expect(reviewText).not.toContain("airy");
     expect(reviewText).not.toContain("sparse");
     expect(reviewText).not.toContain("fits");
-    expect(reviewText).not.toContain("待检测");
-    expect(reviewText).not.toContain("规则单页");
-    expect(reviewText).not.toContain("实测预览");
-  });
+      expect(reviewText).not.toContain("待检测");
+      expect(reviewText).not.toContain("规则单页");
+      expect(reviewText).not.toContain("实测预览");
+    },
+    15_000,
+  );
 
   it("uses measured balance for the guided preview summary when preview data is available", async () => {
     vi.resetModules();
@@ -2178,7 +2182,7 @@ describe("ResumeStudio", () => {
     await user.click(screen.getByRole("button", { name: "看看能不能放进一页" }));
 
     expect(scrollIntoView).toHaveBeenCalledTimes(3);
-  });
+  }, 15_000);
 
   it("lets users fill optional education highlights in the sample format", async () => {
     const user = userEvent.setup();

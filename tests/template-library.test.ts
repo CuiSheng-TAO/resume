@@ -169,6 +169,17 @@ describe("template library", () => {
     expect(new Set(trioSignatures).size).toBe(TEMPLATE_FAMILY_LIBRARY.length);
   });
 
+  it("spreads hero variants across the catalog so no single header dominates", () => {
+    const heroCounts = TEMPLATE_FAMILY_LIBRARY.reduce<Record<string, number>>((accumulator, template) => {
+      accumulator[template.sections.hero.variant] =
+        (accumulator[template.sections.hero.variant] ?? 0) + 1;
+
+      return accumulator;
+    }, {});
+
+    expect(Math.max(...Object.values(heroCounts))).toBeLessThanOrEqual(3);
+  });
+
   it("keeps the renamed warm profile template structurally different from flagship", () => {
     const manifestById = new Map(
       TEMPLATE_FAMILY_LIBRARY.map((template) => [template.templateId, template] as const),
