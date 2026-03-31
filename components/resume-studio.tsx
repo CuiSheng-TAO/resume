@@ -2550,6 +2550,28 @@ export function ResumeStudio() {
           workspace.contentDocument,
           recommendedTemplateManifests,
         );
+  const additionalTemplateGroups = additionalTemplateManifests.reduce<
+    Array<{
+      familyId: string;
+      familyLabel: string;
+      templates: typeof additionalTemplateManifests;
+    }>
+  >((groups, manifest) => {
+    const currentGroup = groups.find((group) => group.familyId === manifest.familyId);
+
+    if (currentGroup) {
+      currentGroup.templates.push(manifest);
+      return groups;
+    }
+
+    groups.push({
+      familyId: manifest.familyId ?? manifest.templateId,
+      familyLabel: manifest.familyLabel ?? "其他版式",
+      templates: [manifest],
+    });
+
+    return groups;
+  }, []);
   const isStrengtheningSectionExpanded = (section: StrengtheningSectionKey) =>
     editorFlowMode !== "strengthening" ||
     focusedStrengtheningSection === section ||
@@ -3093,46 +3115,56 @@ export function ResumeStudio() {
                               <p className="inline-note">
                                 这里再给你几种不同路数的版式。点中后会直接替换进上面的推荐位。
                               </p>
-                              <div className="template-card-grid template-card-grid-secondary">
-                                {additionalTemplateManifests.map((manifest) => {
-                                  const cardHighlights = buildTemplateCardHighlights(manifest);
-                                  const accessibilityDescription = [
-                                    manifest.familyLabel,
-                                    manifest.fitSummary,
-                                    cardHighlights.join("，"),
-                                  ]
-                                    .filter(Boolean)
-                                    .join("。");
-                                  const descriptionId = `template-card-description-${manifest.templateId}`;
+                              <div className="template-library-groups">
+                                {additionalTemplateGroups.map((group) => (
+                                  <section className="template-family-group" key={group.familyId}>
+                                    <div className="template-family-group-header">
+                                      <h4>{group.familyLabel}</h4>
+                                      <span>{group.templates.length} 套</span>
+                                    </div>
+                                    <div className="template-card-grid template-card-grid-secondary">
+                                      {group.templates.map((manifest) => {
+                                        const cardHighlights = buildTemplateCardHighlights(manifest);
+                                        const accessibilityDescription = [
+                                          manifest.familyLabel,
+                                          manifest.fitSummary,
+                                          cardHighlights.join("，"),
+                                        ]
+                                          .filter(Boolean)
+                                          .join("。");
+                                        const descriptionId = `template-card-description-${manifest.templateId}`;
 
-                                  return (
-                                    <button
-                                      key={manifest.templateId}
-                                      aria-describedby={descriptionId}
-                                      aria-label={manifest.displayName}
-                                      aria-pressed={false}
-                                      className="template-card"
-                                      onClick={() => handleAdditionalTemplatePromote(manifest.templateId)}
-                                      type="button"
-                                    >
-                                      <span className="sr-only" id={descriptionId}>
-                                        {accessibilityDescription}
-                                      </span>
-                                      {renderTemplateCardPreview(manifest)}
-                                      <span className="template-card-family">{manifest.familyLabel}</span>
-                                      <span className="template-card-name">{manifest.displayName}</span>
-                                      <span className="template-card-description">{manifest.description}</span>
-                                      <span className="template-card-fit">{manifest.fitSummary}</span>
-                                      <span className="template-card-tags">
-                                        {cardHighlights.map((highlight) => (
-                                          <span className="template-card-tag" key={`${manifest.templateId}-${highlight}`}>
-                                            {highlight}
-                                          </span>
-                                        ))}
-                                      </span>
-                                    </button>
-                                  );
-                                })}
+                                        return (
+                                          <button
+                                            key={manifest.templateId}
+                                            aria-describedby={descriptionId}
+                                            aria-label={manifest.displayName}
+                                            aria-pressed={false}
+                                            className="template-card"
+                                            onClick={() => handleAdditionalTemplatePromote(manifest.templateId)}
+                                            type="button"
+                                          >
+                                            <span className="sr-only" id={descriptionId}>
+                                              {accessibilityDescription}
+                                            </span>
+                                            {renderTemplateCardPreview(manifest)}
+                                            <span className="template-card-family">{manifest.familyLabel}</span>
+                                            <span className="template-card-name">{manifest.displayName}</span>
+                                            <span className="template-card-description">{manifest.description}</span>
+                                            <span className="template-card-fit">{manifest.fitSummary}</span>
+                                            <span className="template-card-tags">
+                                              {cardHighlights.map((highlight) => (
+                                                <span className="template-card-tag" key={`${manifest.templateId}-${highlight}`}>
+                                                  {highlight}
+                                                </span>
+                                              ))}
+                                            </span>
+                                          </button>
+                                        );
+                                      })}
+                                    </div>
+                                  </section>
+                                ))}
                               </div>
                             </div>
                           ) : null}

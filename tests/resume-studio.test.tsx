@@ -851,7 +851,11 @@ describe("ResumeStudio", () => {
     await user.click(within(templateBlock).getByRole("button", { name: "看看更多版式" }));
 
     const moreSection = within(templateBlock).getByTestId("more-template-options");
+    const familyHeadings = within(moreSection).getAllByRole("heading", { level: 4 });
+
+    expect(familyHeadings[0]).toHaveTextContent("冷静学术");
     expect(within(moreSection).getByRole("button", { name: "教育先读版" })).toBeInTheDocument();
+    expect(within(moreSection).getByRole("button", { name: "学术台账版" })).toBeInTheDocument();
 
     await user.click(within(moreSection).getByRole("button", { name: "教育先读版" }));
 

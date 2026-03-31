@@ -219,6 +219,35 @@ button {
   margin-top: 8px;
 }
 
+.template-library-groups {
+  display: grid;
+  gap: 18px;
+}
+
+.template-family-group {
+  display: grid;
+  gap: 10px;
+}
+
+.template-family-group-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.template-family-group-header h4 {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 1rem;
+  letter-spacing: 0.04em;
+}
+
+.template-family-group-header span {
+  color: rgba(64, 82, 110, 0.72);
+  font-size: 0.82rem;
+}
+
 .starter-summary-card {
   display: grid;
   gap: 12px;
