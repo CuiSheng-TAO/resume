@@ -790,6 +790,9 @@ describe("ResumeStudio", () => {
       within(flagshipCard).queryByText("适合想先交出一版稳妥、可信、不过度冒险的校招简历。"),
     ).not.toBeInTheDocument();
     expect(within(flagshipCard).getByText("抬头信息完整清楚")).toBeInTheDocument();
+    expect(within(flagshipCard).getByText("教育与经历层次稳定")).toBeInTheDocument();
+    expect(within(flagshipCard).getByText("还有 1 项")).toBeInTheDocument();
+    expect(within(flagshipCard).queryByText("整体观感正式克制")).not.toBeInTheDocument();
     expect(within(flagshipCard).getByTestId("template-preview-flagship-reference")).toHaveAttribute(
       "data-hero-variant",
       "name-left-photo-right",
@@ -949,7 +952,8 @@ describe("ResumeStudio", () => {
     const signalCard = await screen.findByRole("button", { name: "亮点清晰" });
     expect(within(signalCard).getByText("上下分区更清楚")).toBeInTheDocument();
     expect(within(signalCard).getByText("结果摘要更醒目")).toBeInTheDocument();
-    expect(within(signalCard).getByText("版面更均衡")).toBeInTheDocument();
+    expect(within(signalCard).getByText("还有 1 项")).toBeInTheDocument();
+    expect(within(signalCard).queryByText("版面更均衡")).not.toBeInTheDocument();
   });
 
   it("renders variant-shaped mini previews for education, awards, and skills", async () => {

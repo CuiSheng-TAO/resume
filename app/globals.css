@@ -800,6 +800,11 @@ button {
   letter-spacing: 0.02em;
 }
 
+.template-card-tag-muted {
+  background: rgba(64, 82, 110, 0.05);
+  color: rgba(36, 55, 87, 0.74);
+}
+
 .primary-button,
 .secondary-button,
 .text-button,

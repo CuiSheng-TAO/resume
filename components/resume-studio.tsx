@@ -627,6 +627,13 @@ const buildTemplateCardHighlights = (manifest: TemplateManifest) =>
         TEMPLATE_DENSITY_LABELS[manifest.compactionPolicy.density],
       ];
 
+const MAX_VISIBLE_TEMPLATE_CARD_HIGHLIGHTS = 2;
+
+const splitTemplateCardHighlights = (highlights: readonly string[]) => ({
+  visibleHighlights: highlights.slice(0, MAX_VISIBLE_TEMPLATE_CARD_HIGHLIGHTS),
+  hiddenHighlightCount: Math.max(0, highlights.length - MAX_VISIBLE_TEMPLATE_CARD_HIGHLIGHTS),
+});
+
 const buildTemplatePreviewSectionVariant = (
   manifest: TemplateManifest,
   section: "education" | "experience" | "awards" | "skills",
@@ -3061,6 +3068,8 @@ export function ResumeStudio() {
                       <div className="template-card-grid" data-testid="recommended-template-options">
                         {recommendedTemplateManifests.map((manifest) => {
                           const cardHighlights = buildTemplateCardHighlights(manifest);
+                          const { visibleHighlights, hiddenHighlightCount } =
+                            splitTemplateCardHighlights(cardHighlights);
                           const accessibilityDescription = [
                             manifest.familyLabel,
                             manifest.bestFor,
@@ -3094,11 +3103,16 @@ export function ResumeStudio() {
                               <span className="template-card-description">{manifest.description}</span>
                               <span className="template-card-best-for">{manifest.bestFor}</span>
                               <span className="template-card-tags">
-                                {cardHighlights.map((highlight) => (
+                                {visibleHighlights.map((highlight) => (
                                   <span className="template-card-tag" key={`${manifest.templateId}-${highlight}`}>
                                     {highlight}
                                   </span>
                                 ))}
+                                {hiddenHighlightCount > 0 ? (
+                                  <span className="template-card-tag template-card-tag-muted">
+                                    还有 {hiddenHighlightCount} 项
+                                  </span>
+                                ) : null}
                               </span>
                             </button>
                           );
@@ -3148,6 +3162,8 @@ export function ResumeStudio() {
                                       <div className="template-card-grid template-card-grid-secondary">
                                         {visibleTemplates.map((manifest) => {
                                         const cardHighlights = buildTemplateCardHighlights(manifest);
+                                        const { visibleHighlights, hiddenHighlightCount } =
+                                          splitTemplateCardHighlights(cardHighlights);
                                         const accessibilityDescription = [
                                           manifest.familyLabel,
                                           manifest.bestFor,
@@ -3177,11 +3193,16 @@ export function ResumeStudio() {
                                             <span className="template-card-description">{manifest.description}</span>
                                             <span className="template-card-best-for">{manifest.bestFor}</span>
                                             <span className="template-card-tags">
-                                              {cardHighlights.map((highlight) => (
+                                              {visibleHighlights.map((highlight) => (
                                                 <span className="template-card-tag" key={`${manifest.templateId}-${highlight}`}>
                                                   {highlight}
                                                 </span>
                                               ))}
+                                              {hiddenHighlightCount > 0 ? (
+                                                <span className="template-card-tag template-card-tag-muted">
+                                                  还有 {hiddenHighlightCount} 项
+                                                </span>
+                                              ) : null}
                                             </span>
                                           </button>
                                         );
