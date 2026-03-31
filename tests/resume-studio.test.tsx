@@ -854,6 +854,12 @@ describe("ResumeStudio", () => {
     const familyHeadings = within(moreSection).getAllByRole("heading", { level: 4 });
 
     expect(familyHeadings[0]).toHaveTextContent("冷静学术");
+    expect(
+      within(moreSection).getByText("适合教育亮点、研究经历或学术信号更强，想把履历讲得更清楚的人。"),
+    ).toBeInTheDocument();
+    expect(
+      within(moreSection).getByText("适合想先投出一版稳妥、正式、不过分冒险的校招简历。"),
+    ).toBeInTheDocument();
     expect(within(moreSection).getByRole("button", { name: "教育先读版" })).toBeInTheDocument();
     expect(within(moreSection).getByRole("button", { name: "学术台账版" })).toBeInTheDocument();
 

@@ -231,9 +231,14 @@ button {
 
 .template-family-group-header {
   display: flex;
-  align-items: baseline;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
+}
+
+.template-family-group-title {
+  display: grid;
+  gap: 6px;
 }
 
 .template-family-group-header h4 {
@@ -243,9 +248,18 @@ button {
   letter-spacing: 0.04em;
 }
 
+.template-family-group-description {
+  margin: 0;
+  max-width: 44ch;
+  color: rgba(64, 82, 110, 0.78);
+  font-size: 0.85rem;
+  line-height: 1.6;
+}
+
 .template-family-group-header span {
   color: rgba(64, 82, 110, 0.72);
   font-size: 0.82rem;
+  padding-top: 2px;
 }
 
 .starter-summary-card {

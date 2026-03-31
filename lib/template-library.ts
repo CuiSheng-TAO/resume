@@ -7,6 +7,13 @@ export const TEMPLATE_FAMILY_LABELS: Record<TemplateFamilyId, string> = {
   "highlight-forward": "重点鲜明",
 };
 
+export const TEMPLATE_FAMILY_SUMMARIES: Record<TemplateFamilyId, string> = {
+  "warm-professional": "适合想先投出一版稳妥、正式、不过分冒险的校招简历。",
+  "calm-academic": "适合教育亮点、研究经历或学术信号更强，想把履历讲得更清楚的人。",
+  "modern-clean": "适合想显得轻一点、利落一点，但又不想做得太花的人。",
+  "highlight-forward": "适合成绩、奖项或结果数字很明确，想先把亮点抬出来的人。",
+};
+
 export const TEMPLATE_FAMILY_ORDER: TemplateFamilyId[] = [
   "warm-professional",
   "calm-academic",

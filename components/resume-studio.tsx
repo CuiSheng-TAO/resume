@@ -32,6 +32,7 @@ import {
   type LayoutSuggestion,
 } from "@/lib/layout-advice";
 import { deriveVisualContentBalance } from "@/lib/layout-measure";
+import { TEMPLATE_FAMILY_SUMMARIES } from "@/lib/template-library";
 import {
   createBaselineContentDocumentFromGuidedAnswers,
   createWorkspaceDataBridge,
@@ -47,7 +48,7 @@ import {
   TEMPLATE_CANDIDATE_COUNT,
   type TemplateManifest,
 } from "@/lib/template-manifest";
-import type { ExperienceVariant, HeroVariant } from "@/lib/template-types";
+import type { ExperienceVariant, HeroVariant, TemplateFamilyId } from "@/lib/template-types";
 import type {
   EducationAsset,
   ExperienceAsset,
@@ -2552,7 +2553,7 @@ export function ResumeStudio() {
         );
   const additionalTemplateGroups = additionalTemplateManifests.reduce<
     Array<{
-      familyId: string;
+      familyId: TemplateFamilyId;
       familyLabel: string;
       templates: typeof additionalTemplateManifests;
     }>
@@ -2565,8 +2566,8 @@ export function ResumeStudio() {
     }
 
     groups.push({
-      familyId: manifest.familyId ?? manifest.templateId,
-      familyLabel: manifest.familyLabel ?? "其他版式",
+      familyId: manifest.familyId,
+      familyLabel: manifest.familyLabel,
       templates: [manifest],
     });
 
@@ -3119,7 +3120,12 @@ export function ResumeStudio() {
                                 {additionalTemplateGroups.map((group) => (
                                   <section className="template-family-group" key={group.familyId}>
                                     <div className="template-family-group-header">
-                                      <h4>{group.familyLabel}</h4>
+                                      <div className="template-family-group-title">
+                                        <h4>{group.familyLabel}</h4>
+                                        <p className="template-family-group-description">
+                                          {TEMPLATE_FAMILY_SUMMARIES[group.familyId]}
+                                        </p>
+                                      </div>
                                       <span>{group.templates.length} 套</span>
                                     </div>
                                     <div className="template-card-grid template-card-grid-secondary">
