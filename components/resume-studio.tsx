@@ -2686,13 +2686,15 @@ export function ResumeStudio() {
   return (
     <main className="studio-root">
       <Toast message={statusMessage} onDismiss={() => setStatusMessage(null)} />
-      <section className="hero-strip">
+      <section className={stage === "editor" ? "hero-strip hero-strip--compact" : "hero-strip"}>
         <div className="hero-brand">
           <div className="hero-title-lockup">
             <h1>把你的第一版简历先做出来</h1>
             <p className="hero-subtitle">校招一页简历助手</p>
           </div>
-          <p className="hero-note">先填写基本信息，再慢慢完善成可投递的一版。</p>
+          {stage !== "editor" ? (
+            <p className="hero-note">先填写基本信息，再慢慢完善成可投递的一版。</p>
+          ) : null}
         </div>
       </section>
 
@@ -2718,7 +2720,11 @@ export function ResumeStudio() {
       ) : null}
 
       <section
-        className={`studio-shell ${stage === "editor" ? `mobile-panel-${mobilePanel}` : ""}`.trim()}
+        className={[
+          "studio-shell",
+          stage === "landing" && "studio-shell--landing",
+          stage === "editor" && `mobile-panel-${mobilePanel}`,
+        ].filter(Boolean).join(" ")}
       >
         <div className="studio-left studio-panel studio-panel-editor">
           {stage === "landing" ? (
