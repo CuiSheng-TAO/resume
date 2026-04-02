@@ -524,8 +524,8 @@ describe("resume export", () => {
 
     const html = exportResumeHtml(workspace);
 
-    expect(html).toContain('<span class="num">(1)</span> 独立完成初筛与约面。');
-    expect(html).toContain('<span class="num">(2)</span> 跟进到岗率并复盘流程。');
+    expect(html).toContain('<span class="resume-bullet-dot">·</span> 独立完成初筛与约面。');
+    expect(html).toContain('<span class="resume-bullet-dot">·</span> 跟进到岗率并复盘流程。');
   });
 
   it("exports sample-style optional education highlights when present", () => {
@@ -704,7 +704,7 @@ describe("resume export", () => {
     expect(document.querySelector(".resume-experience-role-first-header")?.textContent).toContain("招聘运营实习生");
   });
 
-  it("prints the exported resume document from a hidden iframe after the document loads", () => {
+  it("prints the exported resume document from a hidden iframe after the document loads", async () => {
     const workspace = buildWorkspaceFromIntakeAnswers({
       fullName: "陈星野",
       targetRole: "招聘运营实习生",
@@ -744,7 +744,9 @@ describe("resume export", () => {
           contentWindow: {
             focus,
             print,
-          } as Window,
+            addEventListener: vi.fn(),
+            document: { fonts: { ready: Promise.resolve() } },
+          } as unknown as Window,
         } as unknown as HTMLIFrameElement;
 
         return createdIframe;
@@ -764,6 +766,7 @@ describe("resume export", () => {
     expect(print).not.toHaveBeenCalled();
 
     createdIframe?.onload?.(new Event("load"));
+    await vi.waitFor(() => expect(print).toHaveBeenCalled());
 
     expect(focus).toHaveBeenCalled();
     expect(print).toHaveBeenCalled();

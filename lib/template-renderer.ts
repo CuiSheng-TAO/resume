@@ -263,12 +263,12 @@ const renderEducation = (workspace: WorkspaceData, manifest: TemplateManifest) =
   `;
 };
 
-const renderExperienceBullets = (bullets: string[], startIndex = 0) =>
+const renderExperienceBullets = (bullets: string[]) =>
   bullets
     .map(
-      (bullet, index) => `
+      (bullet) => `
         <div class="resume-experience-item">
-          <span class="num">(${startIndex + index + 1})</span> ${escapeHtml(bullet)}
+          <span class="resume-bullet-dot">·</span> ${escapeHtml(bullet)}
         </div>
       `,
     )
@@ -285,7 +285,7 @@ const renderExperienceHeader = (experience: FlagshipExperienceEntry) => `
       }
       （<span class="resume-text-date">${escapeHtml(experience.dateRange)}</span>）
     </span>
-    <span class="resume-role">${escapeHtml(experience.role)}</span>
+    <span class="resume-exp-role">${escapeHtml(experience.role)}</span>
   </div>
 `;
 
@@ -300,7 +300,7 @@ const renderExperienceEntries = (
           return `
             <div class="resume-experience-entry resume-experience-entry--role-first">
               <div class="resume-experience-role-first-header">
-                <div class="resume-role resume-role--lead">${escapeHtml(experience.role)}</div>
+                <div class="resume-exp-role resume-exp-role--lead">${escapeHtml(experience.role)}</div>
                 <div class="resume-experience-role-first-meta">
                   <b>${escapeHtml(experience.organization)}</b>
                   ${
@@ -332,7 +332,7 @@ const renderExperienceEntries = (
                   : ""
               }
               ${renderExperienceHeader(experience)}
-              ${renderExperienceBullets(remainingBullets, leadBullet ? 1 : 0)}
+              ${renderExperienceBullets(remainingBullets)}
             </div>
           `;
         }
@@ -573,8 +573,6 @@ export const createResumeRenderTree = ({
   }));
 
 export const SHARED_RESUME_CSS = `
-  @import url('https://fonts.loli.net/css2?family=LXGW+WenKai+TC:wght@400;700&display=swap');
-
   .resume-sheet, .flagship-page {
     --resume-accent: #1e3a5f;
     --resume-accent-soft: #e8eef4;
@@ -614,11 +612,14 @@ export const SHARED_RESUME_CSS = `
   .resume-margin--tight { padding: 6mm 11mm 10mm 11mm; }
   .resume-margin--balanced { padding: 7mm 12mm 11mm 12mm; }
   .resume-margin--airy { padding: 9mm 13mm 12mm 13mm; }
-  .resume-text-latin, .resume-text-strong, .resume-text-date, .resume-text-number, .num {
+  .resume-text-latin, .resume-text-strong, .resume-text-date, .resume-text-number {
     font-family: var(--resume-latin-font);
   }
-  .resume-text-strong, .resume-text-date, .resume-text-number, .num {
+  .resume-text-strong, .resume-text-date, .resume-text-number {
     font-weight: 700;
+  }
+  .resume-bullet-dot {
+    color: var(--resume-accent);
   }
   .resume-hero {
     padding-bottom: 4px;
@@ -893,7 +894,7 @@ export const SHARED_RESUME_CSS = `
     padding-top: 0;
     border-top: none;
   }
-  .resume-role--lead {
+  .resume-exp-role--lead {
     display: block;
     font-size: 12.4pt;
     color: var(--resume-accent);
@@ -930,7 +931,7 @@ export const SHARED_RESUME_CSS = `
     font-weight: 700;
   }
   .resume-experience-header .resume-text-date { color: var(--resume-muted); }
-  .resume-role { white-space: nowrap; }
+  .resume-exp-role { overflow: hidden; text-overflow: ellipsis; }
   .resume-organization-note {
     font-size: 9pt;
     color: #444;

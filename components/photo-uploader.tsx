@@ -156,7 +156,7 @@ export function PhotoUploader({ photo, onPhotoChange }: PhotoUploaderProps) {
     <section className="studio-block">
       <div className="block-heading">
         <div>
-          <p className="block-kicker">Photo</p>
+          <p className="block-kicker">照片</p>
           <h3>证件照</h3>
         </div>
         {photo?.processingStatus === "ready" ? <span className="block-status ready">已优化</span> : null}

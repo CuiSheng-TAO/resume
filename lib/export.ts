@@ -49,7 +49,7 @@ export const printToPdf = (workspace: WorkspaceData): Promise<void> =>
     iframe.style.opacity = "0";
     iframe.style.pointerEvents = "none";
 
-    iframe.onload = () => {
+    iframe.onload = async () => {
       const frameWindow = iframe.contentWindow;
 
       if (!frameWindow) {
@@ -58,12 +58,23 @@ export const printToPdf = (workspace: WorkspaceData): Promise<void> =>
         return;
       }
 
-      frameWindow.focus();
-      frameWindow.print();
-      window.setTimeout(() => {
+      try {
+        await frameWindow.document.fonts.ready;
+      } catch {
+        /* fonts API unavailable — proceed anyway */
+      }
+
+      const cleanup = () => {
+        clearTimeout(fallbackTimer);
         iframe.remove();
         resolve();
-      }, 1000);
+      };
+
+      const fallbackTimer = window.setTimeout(cleanup, 5000);
+      frameWindow.addEventListener("afterprint", cleanup, { once: true });
+
+      frameWindow.focus();
+      frameWindow.print();
     };
 
     iframe.onerror = () => {

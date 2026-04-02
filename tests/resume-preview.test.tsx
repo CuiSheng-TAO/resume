@@ -486,7 +486,7 @@ describe("ResumePreview", () => {
 
     const bulletRows = container.querySelectorAll(".resume-experience-item");
     expect(bulletRows).toHaveLength(2);
-    expect(screen.getByText("(2)")).toBeInTheDocument();
+    expect(container.querySelectorAll(".resume-bullet-dot")).toHaveLength(2);
   });
 
   it("renders optional education highlights in the same sample-style summary line", () => {

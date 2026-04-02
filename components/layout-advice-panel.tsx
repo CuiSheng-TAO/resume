@@ -19,7 +19,7 @@ export function LayoutAdvicePanel({
     <section className="studio-block">
       <div className="block-heading">
         <div>
-          <p className="block-kicker">Advice</p>
+          <p className="block-kicker">建议</p>
           <h3>单页建议</h3>
         </div>
       </div>
@@ -30,7 +30,7 @@ export function LayoutAdvicePanel({
       </ul>
       {advice.sequence.length > 0 ? (
         <section className="advice-sequence">
-          <p className="block-kicker">Preview</p>
+          <p className="block-kicker">预览</p>
           <h4>本轮预演</h4>
           <ol className="advice-sequence-list">
             {advice.sequence.map((suggestion) => (
