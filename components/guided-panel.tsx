@@ -87,7 +87,12 @@ export function GuidedPanel({
       </div>
       {refinementHint ? <p className="inline-note">{refinementHint}</p> : null}
       <div className="entry-actions">
-        <button className="primary-button" onClick={onNext} type="button">
+        <button
+          className="primary-button"
+          disabled={!draftAnswer.trim()}
+          onClick={onNext}
+          type="button"
+        >
           {actionWillCreateDraft ? "生成第一版简历" : "下一题"}
         </button>
         <button className="text-button" onClick={onBack} type="button">
