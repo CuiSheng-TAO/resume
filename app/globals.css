@@ -188,6 +188,11 @@ button {
   padding: 22px;
 }
 
+.studio-block--action {
+  border-left: 3px solid var(--accent);
+  background: rgba(229, 236, 246, 0.62);
+}
+
 .landing-copy h2,
 .preview-empty h3,
 .block-heading h3,

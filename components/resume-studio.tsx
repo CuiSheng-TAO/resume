@@ -2764,7 +2764,7 @@ export function ResumeStudio() {
           {stage === "editor" && workspace ? (
             <>
               {editorFlowMode === "starter" ? (
-                <section className="studio-block">
+                <section className="studio-block studio-block--action">
                   <div className="block-heading">
                     <div>
                       <p className="block-kicker">第一版</p>
@@ -2846,7 +2846,7 @@ export function ResumeStudio() {
               ) : null}
 
               {editorFlowMode === "strengthening" && intakeFollowUpQuestion ? (
-                <section className="studio-block">
+                <section className="studio-block studio-block--action">
                   <div className="block-heading">
                     <div>
                       <p className="block-kicker">下一步</p>
@@ -2884,7 +2884,7 @@ export function ResumeStudio() {
               ) : null}
 
               {editorFlowMode === "review" && intakeFollowUpQuestion ? (
-                <section className="studio-block">
+                <section className="studio-block studio-block--action">
                   <div className="block-heading">
                     <div>
                       <p className="block-kicker">完善</p>
@@ -3290,7 +3290,7 @@ export function ResumeStudio() {
                 })
               )}
 
-              {editorFlowMode === "strengthening" ? (
+              {editorFlowMode === "strengthening" || editorFlowMode === "starter" ? (
                 <>
                   {renderCollapsedEditorSection({
                     kicker: "更多",
@@ -3298,7 +3298,9 @@ export function ResumeStudio() {
                     actionLabel: expandedStrengtheningSections.adjustments
                       ? "收起更多调整"
                       : "展开更多调整",
-                    copy: "证件照和版面建议先收在这里，避免打断当前补强。",
+                    copy: editorFlowMode === "starter"
+                      ? "照片和版面微调可以稍后再看。"
+                      : "证件照和版面建议先收在这里，避免打断当前补强。",
                     onExpand: () => toggleStrengtheningSection("adjustments"),
                   })}
                   {expandedStrengtheningSections.adjustments ? (
