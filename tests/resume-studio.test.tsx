@@ -781,19 +781,10 @@ describe("ResumeStudio", () => {
     expect(flagshipCard).toHaveAccessibleDescription(
       /适合想先交出一版稳妥、可信、不过度冒险的校招简历。/,
     );
-    expect(flagshipCard).toHaveAccessibleDescription(/抬头信息完整清楚/);
     expect(flagshipCard).toHaveAttribute("aria-pressed", "true");
-    expect(within(flagshipCard).getByText("温暖专业")).toBeInTheDocument();
     expect(within(flagshipCard).getByText("稳妥通用版")).toBeInTheDocument();
     expect(within(flagshipCard).getByText("先把姓名、教育和经历都讲清楚，适合大多数校招简历。")).toBeInTheDocument();
-    expect(within(flagshipCard).getByText("适合先稳稳投递")).toBeInTheDocument();
-    expect(
-      within(flagshipCard).queryByText("适合想先交出一版稳妥、可信、不过度冒险的校招简历。"),
-    ).not.toBeInTheDocument();
-    expect(within(flagshipCard).getByText("抬头信息完整清楚")).toBeInTheDocument();
-    expect(within(flagshipCard).getByText("教育与经历层次稳定")).toBeInTheDocument();
-    expect(within(flagshipCard).getByText("还有 1 项")).toBeInTheDocument();
-    expect(within(flagshipCard).queryByText("整体观感正式克制")).not.toBeInTheDocument();
+    expect(within(flagshipCard).getByText("最匹配你的内容")).toBeInTheDocument();
     expect(within(flagshipCard).getByTestId("template-preview-flagship-reference")).toHaveAttribute(
       "data-hero-variant",
       "name-left-photo-right",
@@ -805,7 +796,7 @@ describe("ResumeStudio", () => {
 
     const compactCard = within(templateBlock).getByRole("button", { name: /一页紧凑版/ });
     expect(compactCard).toBeInTheDocument();
-    expect(within(compactCard).getByText("适合内容多但想压一页")).toBeInTheDocument();
+    expect(within(compactCard).getByText("先把更多内容压进一页，适合经历和技能都偏多的人。")).toBeInTheDocument();
     expect(within(compactCard).getByTestId("template-preview-compact-template")).toHaveAttribute(
       "data-hero-variant",
       "centered-name-minimal",
@@ -817,7 +808,7 @@ describe("ResumeStudio", () => {
 
     const bannerCard = within(templateBlock).getByRole("button", { name: /上半页抢眼版/ });
     expect(bannerCard).toBeInTheDocument();
-    expect(within(bannerCard).getByText("适合亮点和结果明确")).toBeInTheDocument();
+    expect(within(bannerCard).getByText("先把页头和结果抬到上半页，适合想先抓住注意力的人。")).toBeInTheDocument();
     expect(within(bannerCard).getByTestId("template-preview-banner-template")).toHaveAttribute(
       "data-hero-variant",
       "classic-banner",
@@ -827,7 +818,7 @@ describe("ResumeStudio", () => {
       "metric-first",
     );
     expect(screen.queryByText("Flagship Reference")).not.toBeInTheDocument();
-    expect(screen.getByText("已先给你几种版式候选，先看看哪套更适合这版内容。")).toBeInTheDocument();
+    expect(screen.getByText("你的经历里有量化成果，推荐先看结果导向型版式。")).toBeInTheDocument();
   });
 
   it("keeps additional templates collapsed until requested and promotes one into the recommended set", async () => {
@@ -873,14 +864,8 @@ describe("ResumeStudio", () => {
 
     const academicGroup = familyHeadings[0].closest(".template-family-group") as HTMLElement;
     expect(academicGroup).not.toBeNull();
-    expect(academicGroup.querySelectorAll(".template-card")).toHaveLength(2);
-    expect(within(academicGroup).getByRole("button", { name: "展开本组更多" })).toBeInTheDocument();
-    expect(within(academicGroup).queryByRole("button", { name: "学业履历版" })).not.toBeInTheDocument();
-
-    await user.click(within(academicGroup).getByRole("button", { name: "展开本组更多" }));
-
     expect(academicGroup.querySelectorAll(".template-card")).toHaveLength(4);
-    expect(within(academicGroup).getByRole("button", { name: "收起本组" })).toBeInTheDocument();
+    expect(within(academicGroup).queryByRole("button", { name: "展开本组更多" })).not.toBeInTheDocument();
     expect(within(academicGroup).getByRole("button", { name: "学业履历版" })).toBeInTheDocument();
 
     await user.click(within(moreSection).getByRole("button", { name: "教育亮点先读" }));
@@ -951,10 +936,9 @@ describe("ResumeStudio", () => {
     await user.click(screen.getByRole("button", { name: "整理并起稿" }));
 
     const signalCard = await screen.findByRole("button", { name: "亮点清晰" });
-    expect(within(signalCard).getByText("上下分区更清楚")).toBeInTheDocument();
-    expect(within(signalCard).getByText("结果摘要更醒目")).toBeInTheDocument();
-    expect(within(signalCard).getByText("还有 1 项")).toBeInTheDocument();
-    expect(within(signalCard).queryByText("版面更均衡")).not.toBeInTheDocument();
+    expect(within(signalCard).getByText("适合把重要信息压缩到更清楚的版头里。")).toBeInTheDocument();
+    expect(within(signalCard).queryByText("上下分区更清楚")).not.toBeInTheDocument();
+    expect(within(signalCard).queryByText("还有 1 项")).not.toBeInTheDocument();
   });
 
   it("renders variant-shaped mini previews for education, awards, and skills", async () => {
@@ -1177,12 +1161,11 @@ describe("ResumeStudio", () => {
     const reopenedFlagshipCard = within(templateBlock).getByRole("button", { name: /稳妥通用版/ });
 
     expect(screen.getByRole("button", { name: "一页紧凑版" })).toBeInTheDocument();
-    expect(within(templateBlock).getByText("3 套候选")).toBeInTheDocument();
-    expect(within(reopenedFlagshipCard).getByText("温暖专业")).toBeInTheDocument();
+    expect(within(reopenedFlagshipCard).getByText("稳妥通用版")).toBeInTheDocument();
+    expect(within(reopenedFlagshipCard).getByText("先把姓名、教育和经历都讲清楚，适合大多数校招简历。")).toBeInTheDocument();
     expect(
-      within(reopenedFlagshipCard).queryByText("适合想先交出一版稳妥、可信、不过度冒险的校招简历。"),
+      within(reopenedFlagshipCard).queryByText("抬头信息完整清楚"),
     ).not.toBeInTheDocument();
-    expect(within(reopenedFlagshipCard).getByText("抬头信息完整清楚")).toBeInTheDocument();
   });
 
   it("refreshes template candidates after editor content changes", async () => {

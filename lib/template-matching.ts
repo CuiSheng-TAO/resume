@@ -641,3 +641,23 @@ export const rankAdditionalTemplateLibrary = (
 
   return orderedTemplates;
 };
+
+export const describeRecommendationReason = (
+  content: TemplateMatchingContentInput,
+): string => {
+  const features = extractContentFeatures(normalizeContentDocument(content));
+
+  if (features.isMetricTarget) {
+    return "你的经历里有量化成果，推荐先看结果导向型版式。";
+  }
+  if (features.isAcademicTarget) {
+    return "你的教育和学术经历较强，推荐先看学术风格。";
+  }
+  if (features.isDense) {
+    return "你的内容比较多，推荐先看紧凑型版式。";
+  }
+  if (features.isSkillsScreenTarget) {
+    return "你的岗位看重技能标签，推荐先看技能前置的版式。";
+  }
+  return "根据你的内容，推荐先看这几套。";
+};

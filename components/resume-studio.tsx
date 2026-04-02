@@ -24,7 +24,7 @@ import {
   type IntakeProgress,
   type IntakeQuestionPlan,
 } from "@/lib/intake-engine";
-import { rankAdditionalTemplateLibrary } from "@/lib/template-matching";
+import { describeRecommendationReason, rankAdditionalTemplateLibrary } from "@/lib/template-matching";
 import {
   applyLayoutSuggestion,
   applyLayoutSuggestionSequence,
@@ -48,7 +48,7 @@ import {
   TEMPLATE_CANDIDATE_COUNT,
   type TemplateManifest,
 } from "@/lib/template-manifest";
-import type { ExperienceVariant, HeroVariant, TemplateFamilyId } from "@/lib/template-types";
+import type { TemplateFamilyId } from "@/lib/template-types";
 import type {
   EducationAsset,
   ExperienceAsset,
@@ -596,49 +596,11 @@ const CONTENT_BALANCE_LABELS = {
   dense: "偏满",
 } as const;
 
-const TEMPLATE_HERO_LABELS = {
-  "classic-banner": "标题更醒目",
-  "name-left-photo-right": "信息分布稳",
-  "centered-name-minimal": "版头更轻简",
-  "split-meta-band": "上下分区更清楚",
-  "stacked-profile-card": "档案卡更完整",
-} as const satisfies Record<HeroVariant, string>;
-
-const TEMPLATE_EXPERIENCE_LABELS = {
-  "stacked-bullets": "经历按条展开",
-  "metric-first": "结果放得更前",
-  "compact-cards": "经历更紧凑",
-  "role-first": "角色切换更清楚",
-  "result-callout": "结果摘要更醒目",
-} as const satisfies Record<ExperienceVariant, string>;
-
-const TEMPLATE_DENSITY_LABELS = {
-  airy: "版面更舒展",
-  balanced: "版面更均衡",
-  tight: "版面更紧凑",
-} as const;
-
 const OVERFLOW_STATUS_LABELS = {
   fits: "通过",
   overflow: "超出",
   "requires-trim": "需删减",
 } as const;
-
-const buildTemplateCardHighlights = (manifest: TemplateManifest) =>
-  manifest.previewHighlights?.length
-    ? manifest.previewHighlights
-    : [
-        TEMPLATE_HERO_LABELS[manifest.sections.hero.variant],
-        TEMPLATE_EXPERIENCE_LABELS[manifest.sections.experience.variant],
-        TEMPLATE_DENSITY_LABELS[manifest.compactionPolicy.density],
-      ];
-
-const MAX_VISIBLE_TEMPLATE_CARD_HIGHLIGHTS = 2;
-
-const splitTemplateCardHighlights = (highlights: readonly string[]) => ({
-  visibleHighlights: highlights.slice(0, MAX_VISIBLE_TEMPLATE_CARD_HIGHLIGHTS),
-  hiddenHighlightCount: Math.max(0, highlights.length - MAX_VISIBLE_TEMPLATE_CARD_HIGHLIGHTS),
-});
 
 const buildTemplatePreviewSectionVariant = (
   manifest: TemplateManifest,
@@ -849,7 +811,13 @@ const renderTemplatePreviewSectionBody = (
   );
 };
 
-const renderTemplateCardPreview = (manifest: TemplateManifest) => (
+type ContentHints = {
+  fullName?: string;
+  school?: string;
+  targetRole?: string;
+};
+
+const renderTemplateCardPreview = (manifest: TemplateManifest, hints?: ContentHints) => (
   <span
     aria-hidden="true"
     className={`template-card-preview template-card-preview--${manifest.theme.accentColor}`}
@@ -863,9 +831,9 @@ const renderTemplateCardPreview = (manifest: TemplateManifest) => (
         <span className="template-card-preview-band" />
         <span className="template-card-preview-hero-row">
           <span className="template-card-preview-hero-main">
-            <span className="template-card-preview-title" />
-            <span className="template-card-preview-meta" />
-            <span className="template-card-preview-meta template-card-preview-meta-short" />
+            <span className="template-card-preview-title">{hints?.fullName || ""}</span>
+            <span className="template-card-preview-meta">{hints?.school || ""}</span>
+            <span className="template-card-preview-meta template-card-preview-meta-short">{hints?.targetRole || ""}</span>
           </span>
           <span className="template-card-preview-photo" />
         </span>
@@ -1182,9 +1150,6 @@ export function ResumeStudio() {
   const [followUpDraftAnswer, setFollowUpDraftAnswer] = useState("");
   const [showStarterTemplateOptions, setShowStarterTemplateOptions] = useState(false);
   const [showAdditionalTemplateOptions, setShowAdditionalTemplateOptions] = useState(false);
-  const [expandedAdditionalTemplateFamilies, setExpandedAdditionalTemplateFamilies] = useState<
-    Partial<Record<TemplateFamilyId, boolean>>
-  >({});
   const [activeEducationId, setActiveEducationId] = useState<string | null>(null);
   const [activeExperienceId, setActiveExperienceId] = useState<string | null>(null);
   const [expandedStrengtheningSections, setExpandedStrengtheningSections] = useState<
@@ -1262,11 +1227,6 @@ export function ResumeStudio() {
     setExpandedStrengtheningSections({});
   }, [editorFlowMode, intakeFollowUpQuestion?.question]);
 
-  useEffect(() => {
-    if (!showAdditionalTemplateOptions) {
-      setExpandedAdditionalTemplateFamilies({});
-    }
-  }, [showAdditionalTemplateOptions]);
 
   useEffect(() => {
     if (
@@ -2362,7 +2322,12 @@ export function ResumeStudio() {
         templateId,
       ),
     );
-    setStatusMessage("已换成另一种版式，内容没有变。");
+    const switchedManifest = recommendedTemplateManifests.find((m) => m.templateId === templateId);
+    setStatusMessage(
+      switchedManifest?.displayName
+        ? `已切换到「${switchedManifest.displayName}」，内容没有变。`
+        : "已换成另一种版式，内容没有变。",
+    );
   };
 
   const handleAdditionalTemplatePromote = (templateId: string) => {
@@ -2399,9 +2364,11 @@ export function ResumeStudio() {
       ? "旧材料已经整理成第一版简历，现在可以继续完善。"
       : "现在已经有第一版简历，可以继续完善。";
   const templateBlockCopy =
-    editorFlowMode === "starter"
-      ? "这里先给你 3 种版式，先看哪种更适合你的内容；切换不会改动你的内容。"
-      : "先把内容补顺；需要时再看看哪套版式更适合这版简历。切换版式不会改动你的内容。";
+    editorFlowMode === "starter" && workspace?.contentDocument
+      ? describeRecommendationReason(workspace.contentDocument)
+      : editorFlowMode === "starter"
+        ? "这里先给你 3 种版式，先看哪种更适合你的内容；切换不会改动你的内容。"
+        : "先把内容补顺；需要时再看看哪套版式更适合这版简历。切换版式不会改动你的内容。";
   const pasteRecognitionSummary =
     activeEntryMode === "paste" && workspace?.contentDocument
       ? buildPasteRecognitionSummary(workspace.contentDocument)
@@ -2578,6 +2545,15 @@ export function ResumeStudio() {
   const templateToggleLabel =
     editorFlowMode === "strengthening" ? "需要时再看版式" : "先看版式选项";
   const recommendedTemplateManifests = workspace?.templateSession?.candidateManifests ?? [];
+  const previewContentHints: ContentHints = useMemo(() => {
+    const doc = workspace?.contentDocument;
+    if (!doc) return {};
+    return {
+      fullName: doc.profile.fullName || undefined,
+      school: doc.education[0]?.school || undefined,
+      targetRole: doc.profile.targetRole || undefined,
+    };
+  }, [workspace?.contentDocument]);
   const additionalTemplateManifests =
     editorFlowMode === "strengthening" || !workspace?.contentDocument
       ? []
@@ -3003,28 +2979,25 @@ export function ResumeStudio() {
                   {shouldShowTemplateButtons ? (
                     <>
                       <div className="template-card-grid" data-testid="recommended-template-options">
-                        {recommendedTemplateManifests.map((manifest) => {
-                          const cardHighlights = buildTemplateCardHighlights(manifest);
-                          const { visibleHighlights, hiddenHighlightCount } =
-                            splitTemplateCardHighlights(cardHighlights);
+                        {recommendedTemplateManifests.map((manifest, manifestIndex) => {
                           const accessibilityDescription = [
                             manifest.familyLabel,
                             manifest.bestFor,
                             manifest.fitSummary,
-                            cardHighlights.join("，"),
                           ]
                             .filter(Boolean)
                             .join("。");
                           const descriptionId = `template-card-description-${manifest.templateId}`;
+                          const isSelected = workspace.templateSession?.selectedTemplateId === manifest.templateId;
 
                           return (
                             <button
                               key={manifest.templateId}
                               aria-describedby={descriptionId}
                               aria-label={manifest.displayName}
-                              aria-pressed={workspace.templateSession?.selectedTemplateId === manifest.templateId}
+                              aria-pressed={isSelected}
                               className={
-                                workspace.templateSession?.selectedTemplateId === manifest.templateId
+                                isSelected
                                   ? "template-card template-card-selected"
                                   : "template-card"
                               }
@@ -3034,23 +3007,15 @@ export function ResumeStudio() {
                               <span className="sr-only" id={descriptionId}>
                                 {accessibilityDescription}
                               </span>
-                              {renderTemplateCardPreview(manifest)}
-                              <span className="template-card-family">{manifest.familyLabel}</span>
+                              {renderTemplateCardPreview(manifest, previewContentHints)}
+                              {manifestIndex === 0 ? (
+                                <span className="template-card-badge">最匹配你的内容</span>
+                              ) : null}
                               <span className="template-card-name">{manifest.displayName}</span>
                               <span className="template-card-description">{manifest.description}</span>
-                              <span className="template-card-best-for">{manifest.bestFor}</span>
-                              <span className="template-card-tags">
-                                {visibleHighlights.map((highlight) => (
-                                  <span className="template-card-tag" key={`${manifest.templateId}-${highlight}`}>
-                                    {highlight}
-                                  </span>
-                                ))}
-                                {hiddenHighlightCount > 0 ? (
-                                  <span className="template-card-tag template-card-tag-muted">
-                                    还有 {hiddenHighlightCount} 项
-                                  </span>
-                                ) : null}
-                              </span>
+                              {isSelected && manifest.fitSummary ? (
+                                <span className="template-card-fit">{manifest.fitSummary}</span>
+                              ) : null}
                             </button>
                           );
                         })}
@@ -3078,14 +3043,7 @@ export function ResumeStudio() {
                                 这里再给你几种不同路数的版式。点中后会直接替换进上面的推荐位。
                               </p>
                               <div className="template-library-groups">
-                                {additionalTemplateGroups.map((group) => {
-                                  const isFamilyExpanded =
-                                    expandedAdditionalTemplateFamilies[group.familyId] === true;
-                                  const visibleTemplates = isFamilyExpanded
-                                    ? group.templates
-                                    : group.templates.slice(0, 2);
-
-                                  return (
+                                {additionalTemplateGroups.map((group) => (
                                     <section className="template-family-group" key={group.familyId}>
                                       <div className="template-family-group-header">
                                         <div className="template-family-group-title">
@@ -3097,15 +3055,11 @@ export function ResumeStudio() {
                                         <span>{group.templates.length} 套</span>
                                       </div>
                                       <div className="template-card-grid template-card-grid-secondary">
-                                        {visibleTemplates.map((manifest) => {
-                                        const cardHighlights = buildTemplateCardHighlights(manifest);
-                                        const { visibleHighlights, hiddenHighlightCount } =
-                                          splitTemplateCardHighlights(cardHighlights);
+                                        {group.templates.map((manifest) => {
                                         const accessibilityDescription = [
                                           manifest.familyLabel,
                                           manifest.bestFor,
                                           manifest.fitSummary,
-                                          cardHighlights.join("，"),
                                         ]
                                           .filter(Boolean)
                                           .join("。");
@@ -3124,48 +3078,15 @@ export function ResumeStudio() {
                                             <span className="sr-only" id={descriptionId}>
                                               {accessibilityDescription}
                                             </span>
-                                            {renderTemplateCardPreview(manifest)}
-                                            <span className="template-card-family">{manifest.familyLabel}</span>
+                                            {renderTemplateCardPreview(manifest, previewContentHints)}
                                             <span className="template-card-name">{manifest.displayName}</span>
                                             <span className="template-card-description">{manifest.description}</span>
-                                            <span className="template-card-best-for">{manifest.bestFor}</span>
-                                            <span className="template-card-tags">
-                                              {visibleHighlights.map((highlight) => (
-                                                <span className="template-card-tag" key={`${manifest.templateId}-${highlight}`}>
-                                                  {highlight}
-                                                </span>
-                                              ))}
-                                              {hiddenHighlightCount > 0 ? (
-                                                <span className="template-card-tag template-card-tag-muted">
-                                                  还有 {hiddenHighlightCount} 项
-                                                </span>
-                                              ) : null}
-                                            </span>
                                           </button>
                                         );
                                         })}
                                       </div>
-                                      {group.templates.length > 2 ? (
-                                        <div className="template-family-group-actions">
-                                          <button
-                                            className="text-button"
-                                            onClick={() =>
-                                              setExpandedAdditionalTemplateFamilies((current) => ({
-                                                ...current,
-                                                [group.familyId]: !isFamilyExpanded,
-                                              }))
-                                            }
-                                            type="button"
-                                          >
-                                            {isFamilyExpanded
-                                              ? "收起本组"
-                                              : "展开本组更多"}
-                                          </button>
-                                        </div>
-                                      ) : null}
                                     </section>
-                                  );
-                                })}
+                                ))}
                               </div>
                             </div>
                           ) : null}

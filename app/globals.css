@@ -193,9 +193,15 @@ button {
 
 .template-card-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
   margin-top: 18px;
+}
+
+@media (max-width: 680px) {
+  .template-card-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .template-card-grid-secondary {
@@ -442,17 +448,40 @@ button {
 
 .template-card-preview-title {
   width: 56%;
-  height: 9px;
+  min-height: 9px;
   border-radius: 999px;
   background: var(--template-preview-accent);
+  font-size: 5px;
+  line-height: 9px;
+  color: rgba(255, 255, 255, 0.92);
+  padding: 0 4px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  letter-spacing: 0.06em;
+}
+
+.template-card-preview-title:empty {
+  height: 9px;
 }
 
 .template-card-preview-meta {
   width: 86%;
-  height: 5px;
+  min-height: 5px;
   margin-top: 6px;
   border-radius: 999px;
   background: rgba(86, 102, 124, 0.32);
+  font-size: 3.5px;
+  line-height: 5px;
+  color: rgba(64, 82, 110, 0.72);
+  padding: 0 3px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.template-card-preview-meta:empty {
+  height: 5px;
 }
 
 .template-card-preview-meta-short {
@@ -766,6 +795,28 @@ button {
   color: var(--muted);
   font-size: 0.92rem;
   line-height: 1.6;
+}
+
+.template-card-fit {
+  color: var(--accent);
+  font-size: 0.84rem;
+  line-height: 1.55;
+  font-weight: 500;
+  padding: 8px 12px;
+  border-radius: 14px;
+  background: rgba(43, 61, 93, 0.06);
+}
+
+.template-card-badge {
+  display: inline-flex;
+  align-self: flex-start;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
 }
 
 .template-card-best-for {
