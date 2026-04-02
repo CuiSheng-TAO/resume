@@ -938,16 +938,17 @@ export const SHARED_RESUME_CSS = `
     margin-left: 2px;
   }
   .resume-experience-item {
-    padding-left: 0.5em;
+    padding-left: 1.2em;
+    text-indent: -1.2em;
     font-size: 10.5pt;
-    line-height: 1.45;
+    line-height: 1.55;
   }
   .resume-text-number, .num { color: var(--resume-accent); }
   .resume-awards-table {
     width: 100%;
     table-layout: fixed;
     font-size: 10.5pt;
-    line-height: 1.45;
+    line-height: 1.55;
     border-collapse: collapse;
   }
   .resume-awards-table td {
@@ -976,7 +977,7 @@ export const SHARED_RESUME_CSS = `
   .resume-awards--inline-list .resume-awards-inline { display: block; }
   .resume-skills-line {
     font-size: 10.5pt;
-    line-height: 1.45;
+    line-height: 1.55;
   }
   .resume-skills-columns {
     display: flex;
@@ -1001,7 +1002,7 @@ export const SHARED_RESUME_CSS = `
     flex-wrap: wrap;
     gap: 5px 6px;
     font-size: 10.5pt;
-    line-height: 1.45;
+    line-height: 1.55;
   }
   .resume-skills-column-value--note {
     color: var(--resume-text);

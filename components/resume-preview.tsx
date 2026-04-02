@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import {
   createResumeRenderTree,
@@ -10,6 +10,8 @@ import {
 import { measureResumeSheetElementLayout } from "@/lib/layout-measure";
 import type { ResumeMeasurement, WorkspaceData } from "@/lib/types";
 
+const SHEET_INTRINSIC_WIDTH = 794;
+
 type ResumePreviewProps = {
   workspace: WorkspaceData;
   onMeasurementChange?: (measurement: ResumeMeasurement) => void;
@@ -17,7 +19,26 @@ type ResumePreviewProps = {
 
 export function ResumePreview({ workspace, onMeasurementChange }: ResumePreviewProps) {
   const sheetRef = useRef<HTMLElement | null>(null);
+  const wrapRef = useRef<HTMLDivElement | null>(null);
+  const [scale, setScale] = useState(1);
   const manifest = resolveTemplateManifestForWorkspace(workspace);
+
+  useEffect(() => {
+    const wrap = wrapRef.current;
+    if (!wrap) return;
+
+    const update = () => {
+      const available = wrap.clientWidth;
+      setScale(available >= SHEET_INTRINSIC_WIDTH ? 1 : available / SHEET_INTRINSIC_WIDTH);
+    };
+
+    update();
+
+    if (typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver(update);
+    ro.observe(wrap);
+    return () => ro.disconnect();
+  }, []);
 
   useEffect(() => {
     if (!onMeasurementChange || !sheetRef.current) {
@@ -56,14 +77,24 @@ export function ResumePreview({ workspace, onMeasurementChange }: ResumePreviewP
     onMeasurementChange,
   ]);
 
+  const sheetHeight = sheetRef.current?.scrollHeight ?? 1123;
+
   return (
-    <>
-      <style>{SHARED_RESUME_CSS}</style>
-      {createResumeRenderTree({
-        workspace,
-        manifest,
-        sheetRef,
-      })}
-    </>
+    <div ref={wrapRef} style={{ width: "100%", overflow: "hidden" }}>
+      <div
+        style={{
+          transformOrigin: "top left",
+          transform: scale < 1 ? `scale(${scale})` : undefined,
+          height: scale < 1 ? sheetHeight * scale : undefined,
+        }}
+      >
+        <style>{SHARED_RESUME_CSS}</style>
+        {createResumeRenderTree({
+          workspace,
+          manifest,
+          sheetRef,
+        })}
+      </div>
+    </div>
   );
 }

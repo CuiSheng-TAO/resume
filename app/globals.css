@@ -82,8 +82,7 @@ button {
 }
 
 .hero-kicker,
-.block-kicker,
-.resume-role {
+.block-kicker {
   margin: 0;
   color: var(--muted);
   text-transform: uppercase;
@@ -1285,17 +1284,11 @@ button {
 }
 
 /* Shared resume template styling is injected from lib/template-renderer.ts so preview and export stay in sync. */
-/* Legacy flagship aliases remain below for compatibility. */
+/* Preview-only visual treatment (shadow, border) — not in shared CSS to keep export clean. */
+.resume-sheet,
 .flagship-page {
-  width: min(100%, 794px);
-  min-height: calc(min(100%, 794px) * 1.4142);
-  background: #fff;
-  color: #000;
-  margin: 0 auto;
-  padding: var(--resume-sheet-padding, 7mm 12mm 11mm 12mm);
   box-shadow: var(--shadow);
   border: 1px solid rgba(30, 58, 95, 0.08);
-  overflow: hidden;
 }
 
 .preview-actions-card {
