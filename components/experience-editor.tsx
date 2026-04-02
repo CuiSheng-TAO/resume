@@ -39,7 +39,7 @@ export function ExperienceEditorCard({
         <strong>{sectionLabel} {index + 1}</strong>
         <div className="editor-card-actions">
           <button
-            className="text-button"
+            className={isAiGenerating ? "text-button is-loading" : "text-button"}
             disabled={isAiGenerating}
             onClick={() => onAiRewrite(experience.id)}
             type="button"

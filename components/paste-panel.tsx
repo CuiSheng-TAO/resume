@@ -36,7 +36,7 @@ export function PastePanel({
       </label>
       <div className="entry-actions">
         <button
-          className="primary-button"
+          className={isPasteGenerating ? "primary-button is-loading" : "primary-button"}
           disabled={!pasteText.trim() || isPasteGenerating}
           onClick={onGenerate}
           type="button"
