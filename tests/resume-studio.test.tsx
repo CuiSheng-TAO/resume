@@ -179,7 +179,7 @@ describe("ResumeStudio", () => {
     await user.click(screen.getByRole("button", { name: "下一题" }));
 
     await screen.findByText("你最想投的岗位是什么？");
-    expect(screen.getByText("第 2 题")).toBeInTheDocument();
+    expect(screen.getByText("2 / 5")).toBeInTheDocument();
     expect(
       fetchSpy.mock.calls.filter(([input]) => {
         const url =
@@ -1243,6 +1243,7 @@ describe("ResumeStudio", () => {
                   createManifest({
                     templateId: "edited-template",
                     name: "Edited Template",
+                    displayName: "紧凑清晰",
                     theme: {
                       fontPair: "humanist-sans",
                       accentColor: "forest",
@@ -1412,9 +1413,8 @@ describe("ResumeStudio", () => {
     await user.click(screen.getByRole("button", { name: "继续完善这版" }));
 
     expect(await screen.findByText("这段经历里能补一个数字结果吗？")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "导出网页版" })).toBeDisabled();
-    expect(screen.getByRole("button", { name: "导出 PDF" })).toBeDisabled();
-    expect(screen.getByText("这还是第一版，建议先补完当前这一条再导出。")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "导出网页版" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "导出 PDF" })).toBeEnabled();
   });
 
   it("keeps strengthening focused on the targeted section and hides extra adjustments by default", async () => {
@@ -1904,7 +1904,7 @@ describe("ResumeStudio", () => {
     await user.click(screen.getByRole("button", { name: "整理并起稿" }));
     await user.click(screen.getByRole("button", { name: "再加一段实习" }));
 
-    const secondInternshipCard = screen.getByText("实习 2").closest(".editor-card");
+    const secondInternshipCard = screen.getByText("实习经历 2").closest(".editor-card");
     expect(secondInternshipCard).not.toBeNull();
 
     await user.type(
@@ -1934,8 +1934,8 @@ describe("ResumeStudio", () => {
     if (expandInternshipButton) {
       await user.click(expandInternshipButton);
     }
-    const firstInternshipCard = await screen.findByText("实习 1");
-    const updatedSecondInternshipCard = await screen.findByText("实习 2");
+    const firstInternshipCard = await screen.findByText("实习经历 1");
+    const updatedSecondInternshipCard = await screen.findByText("实习经历 2");
     await waitFor(() => {
       expect(
         (
@@ -2498,8 +2498,9 @@ describe("ResumeStudio", () => {
   it("switches templates without mutating resume facts", async () => {
     const user = userEvent.setup();
     const compactManifest = createManifest({
-      templateId: "compact-template",
-      name: "Compact Template",
+      templateId: "compact-elegance",
+      name: "Compact Elegance",
+      displayName: "紧凑清晰",
       page: {
         size: "A4",
         marginPreset: "tight",
@@ -2584,14 +2585,14 @@ describe("ResumeStudio", () => {
     await waitFor(() => {
       const savedWorkspace = saveWorkspace.mock.calls.at(-1)?.[0];
 
-      expect(savedWorkspace?.templateSession?.selectedTemplateId).toBe("compact-template");
+      expect(savedWorkspace?.templateSession?.selectedTemplateId).toBe("compact-elegance");
       expect(savedWorkspace?.contentDocument).toEqual(originalContentDocument);
       expect(savedWorkspace?.renderState?.density).toBe("tight");
     });
 
     expect(screen.getByDisplayValue("中南财经政法大学")).toBeInTheDocument();
     expect(screen.getByDisplayValue("微派网络科技有限公司")).toBeInTheDocument();
-    expect(container.querySelector(".resume-template--compact-template")).not.toBeNull();
+    expect(container.querySelector(".resume-template--compact-elegance")).not.toBeNull();
     expect(container.querySelector(".resume-template--flagship-reference")).toBeNull();
   });
 
@@ -2775,6 +2776,7 @@ describe("ResumeStudio", () => {
             createManifest({
               templateId: "banner-template",
               name: "Banner Template",
+              displayName: "重点突出",
               theme: {
                 fontPair: "songti-sans",
                 accentColor: "burgundy",
@@ -2818,7 +2820,7 @@ describe("ResumeStudio", () => {
 
     await screen.findByText("第一版简历已经出来了");
     expect(await screen.findByRole("button", { name: "新版紧凑" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "上半页抢眼版" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "重点突出" })).toBeInTheDocument();
     expect(
       fetchSpy.mock.calls.filter(([input]) => {
         const url =

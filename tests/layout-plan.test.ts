@@ -185,6 +185,8 @@ const createManifest = (overrides: Partial<TemplateManifest> & Pick<TemplateMani
       overflowPriority: ["awards", "skills", "experience"],
       ...overrides.compactionPolicy,
     },
+    displayName: overrides.displayName ?? "稳妥简洁",
+    description: overrides.description ?? "结构稳妥，适合先做出一版清楚的校招简历。",
   }) satisfies TemplateManifest;
 
 afterEach(() => {

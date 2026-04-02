@@ -9,7 +9,7 @@ import { assessIntakeProgress } from "@/lib/intake-engine";
 
 const requestSchema = z.object({
   entryMode: z.enum(["guided", "paste"]),
-  text: z.string().min(1),
+  text: z.string().min(1).max(8000),
 });
 
 const contentDocumentSchema = z.object({
@@ -109,7 +109,14 @@ export async function POST(request: Request) {
     );
   }
 
-  const parsed = requestSchema.safeParse(await request.json());
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ message: "请求格式错误。" }, { status: 400 });
+  }
+
+  const parsed = requestSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json({ message: "参数不完整。" }, { status: 400 });
   }

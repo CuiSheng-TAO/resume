@@ -1,6 +1,6 @@
 "use client";
 
-import { startTransition, useCallback, useEffect, useRef, useState } from "react";
+import { startTransition, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 
 import { createAnalyticsEvent } from "@/lib/analytics";
@@ -58,9 +58,15 @@ import type {
   WorkspaceData,
 } from "@/lib/types";
 
-import { PhotoUploader } from "./photo-uploader";
+import { ExperienceSectionEditor } from "./experience-editor";
+import { GuidedPanel } from "./guided-panel";
+import { LandingPanel } from "./landing-panel";
 import { LayoutAdvicePanel } from "./layout-advice-panel";
+import { PastePanel } from "./paste-panel";
+import { PhotoUploader } from "./photo-uploader";
+import { PreviewRail } from "./preview-rail";
 import { ResumePreview } from "./resume-preview";
+import { Toast } from "./toast";
 
 type Stage = "landing" | "guided" | "paste" | "editor";
 type MobilePanel = "editor" | "preview";
@@ -1201,6 +1207,7 @@ export function ResumeStudio() {
   const lastTemplateRefreshSignatureRef = useRef<string | null>(null);
   const initialRestoreLockedRef = useRef(false);
   const followUpSubmissionInFlightRef = useRef(false);
+  const strengtheningInFlightRef = useRef(false);
 
   const trackEvent = async (name: string, payload: Record<string, unknown>) => {
     try {
@@ -1714,24 +1721,29 @@ export function ResumeStudio() {
   };
 
   const handleStartStrengthening = async () => {
-    if (!workspace?.contentDocument) {
+    if (!workspace?.contentDocument || strengtheningInFlightRef.current) {
       return;
     }
 
-    const nextQuestion = await requestInterviewQuestion(workspace.contentDocument, true);
-    setIntakeFollowUpQuestion(nextQuestion);
+    strengtheningInFlightRef.current = true;
+    try {
+      const nextQuestion = await requestInterviewQuestion(workspace.contentDocument, true);
+      setIntakeFollowUpQuestion(nextQuestion);
 
-    if (nextQuestion) {
-      setShowStarterTemplateOptions(false);
-      setShowAdditionalTemplateOptions(false);
-      setEditorFlowMode("strengthening");
-      setStatusMessage("先继续把这版补顺，再回头整体看看。");
-      return;
+      if (nextQuestion) {
+        setShowStarterTemplateOptions(false);
+        setShowAdditionalTemplateOptions(false);
+        setEditorFlowMode("strengthening");
+        setStatusMessage("先继续把这版补顺，再回头整体看看。");
+        return;
+      }
+
+      setStarterExportLockSignature(null);
+      setEditorFlowMode("review");
+      setStatusMessage("这版已经没有必须继续补的缺口了。");
+    } finally {
+      strengtheningInFlightRef.current = false;
     }
-
-    setStarterExportLockSignature(null);
-    setEditorFlowMode("review");
-    setStatusMessage("这版已经没有必须继续补的缺口了。");
   };
 
   const handleResumeStrengthening = () => {
@@ -2205,7 +2217,7 @@ export function ResumeStudio() {
 
   const handleAiRewrite = async (experienceId: string) => {
     const experience = workspace?.experiences.find((item) => item.id === experienceId);
-    if (!experience) {
+    if (!experience || experienceSuggestions[experienceId]?.status === "generating") {
       return;
     }
 
@@ -2325,13 +2337,13 @@ export function ResumeStudio() {
     });
   };
 
-  const handlePrintPdf = () => {
+  const handlePrintPdf = async () => {
     if (!workspace) {
       return;
     }
 
     try {
-      printToPdf(workspace);
+      await printToPdf(workspace);
       void trackEvent("export_clicked", {
         exportType: "pdf",
         density: workspace.layoutPlan.density,
@@ -2381,7 +2393,7 @@ export function ResumeStudio() {
 
   const exportBlocked = !workspace;
   const starterExportBlocked =
-    exportBlocked || editorFlowMode === "starter" || Boolean(starterExportLockSignature);
+    exportBlocked || (editorFlowMode === "starter" && Boolean(starterExportLockSignature));
   const starterBlockCopy =
     activeEntryMode === "paste"
       ? "旧材料已经整理成第一版简历，现在可以继续完善。"
@@ -2395,11 +2407,17 @@ export function ResumeStudio() {
       ? buildPasteRecognitionSummary(workspace.contentDocument)
       : null;
   const guidedPreviewAnswers = guidedQuestion.apply(guidedAnswers, guidedDraftAnswer);
-  const guidedPreviewWorkspace =
-    stage === "guided"
-      ? createWorkspaceFromContentDocument(createGuidedContentDocument(guidedPreviewAnswers))
-      : null;
-  const layoutAdvice = workspace ? buildLayoutAdvice(workspace, previewMeasurement) : null;
+  const guidedPreviewWorkspace = useMemo(
+    () =>
+      stage === "guided"
+        ? createWorkspaceFromContentDocument(createGuidedContentDocument(guidedPreviewAnswers))
+        : null,
+    [stage, guidedPreviewAnswers],
+  );
+  const layoutAdvice = useMemo(
+    () => (workspace ? buildLayoutAdvice(workspace, previewMeasurement) : null),
+    [workspace, previewMeasurement],
+  );
 
   const handleApplyLayoutSuggestion = (suggestion: LayoutSuggestion) => {
     setPreviewMeasurement(null);
@@ -2691,6 +2709,7 @@ export function ResumeStudio() {
 
   return (
     <main className="studio-root">
+      <Toast message={statusMessage} onDismiss={() => setStatusMessage(null)} />
       <section className="hero-strip">
         <div className="hero-brand">
           <div className="hero-title-lockup">
@@ -2727,118 +2746,37 @@ export function ResumeStudio() {
       >
         <div className="studio-left studio-panel studio-panel-editor">
           {stage === "landing" ? (
-            <section className="landing-panel">
-              <div className="landing-copy">
-                <p className="block-kicker">开始</p>
-                <h2>先填基本信息，我们先整理出第一版简历。</h2>
-                <p>
-                  这不是一个空白编辑器，而是一个会提问、会整理、会陪你慢慢补好的简历助手。
-                </p>
-              </div>
-              <div className="entry-actions">
-                <button className="primary-button" onClick={handleEnterGuided} type="button">
-                  从零开始
-                </button>
-                <button className="secondary-button" onClick={handleEnterPaste} type="button">
-                  导入旧材料
-                </button>
-              </div>
-            </section>
+            <LandingPanel onEnterGuided={handleEnterGuided} onEnterPaste={handleEnterPaste} />
           ) : null}
 
           {stage === "paste" ? (
-            <section className="studio-block">
-              <div className="block-heading">
-                <div>
-                  <p className="block-kicker">导入</p>
-                  <h3>导入旧材料，先整理第一版</h3>
-                </div>
-              </div>
-              <label className="field">
-                <span>粘贴现有简历或自我介绍</span>
-                <textarea
-                  aria-label="粘贴现有简历或自我介绍"
-                  disabled={isPasteGenerating}
-                  onChange={(event) => setPasteText(event.target.value)}
-                  placeholder="把旧简历、自我介绍或项目经历贴进来，我们先整理出第一版，再带你继续完善。"
-                  rows={11}
-                  value={pasteText}
-                />
-              </label>
-              <div className="entry-actions">
-                <button
-                  className="primary-button"
-                  disabled={!pasteText.trim() || isPasteGenerating}
-                  onClick={handleGenerateFromPaste}
-                  type="button"
-                >
-                  {isPasteGenerating ? "整理中..." : "整理并起稿"}
-                </button>
-                <button
-                  className="text-button"
-                  disabled={isPasteGenerating}
-                  onClick={() => setStage("landing")}
-                  type="button"
-                >
-                  返回
-                </button>
-              </div>
-            </section>
+            <PastePanel
+              isPasteGenerating={isPasteGenerating}
+              onBack={() => setStage("landing")}
+              onGenerate={handleGenerateFromPaste}
+              onPasteTextChange={setPasteText}
+              pasteText={pasteText}
+            />
           ) : null}
 
           {stage === "guided" ? (
-            <section className="studio-block">
-              <div className="block-heading">
-                <div>
-                  <p className="block-kicker">引导</p>
-                  <h3>回答当前最关键的问题</h3>
-                </div>
-                <span className="block-status">
-                  第 {guidedStepIndex + 1} 题
-                </span>
-              </div>
-              <p className="guided-prompt">{guidedQuestion.prompt}</p>
-              <p className="block-copy">{guidedQuestion.note}</p>
-              {activeEntryMode === "paste" && guidedSourceContentDocument ? (
-                <p className="inline-note">刚刚导入的内容已经保留，现在只补还缺的关键信息。</p>
-              ) : null}
-              <div className="guided-grid">
-                <label className="field">
-                  <span>当前回答</span>
-                  {guidedQuestion.multiline ? (
-                    <>
-                      <textarea
-                        aria-label="当前回答"
-                        onChange={(event) => setGuidedDraftAnswer(event.target.value)}
-                        placeholder={guidedQuestion.placeholder}
-                        rows={6}
-                        value={guidedDraftAnswer}
-                      />
-                      {guidedHelperBlock}
-                    </>
-                  ) : (
-                    <>
-                      <input
-                        aria-label="当前回答"
-                        onChange={(event) => setGuidedDraftAnswer(event.target.value)}
-                        placeholder={guidedQuestion.placeholder}
-                        value={guidedDraftAnswer}
-                      />
-                      {guidedHelperBlock}
-                    </>
-                  )}
-                </label>
-              </div>
-              {guidedRefinementHint ? <p className="inline-note">{guidedRefinementHint}</p> : null}
-              <div className="entry-actions">
-                <button className="primary-button" onClick={handleGuidedNext} type="button">
-                  {guidedActionWillCreateDraft ? "生成第一版简历" : "下一题"}
-                </button>
-                <button className="text-button" onClick={handleGuidedBack} type="button">
-                  {guidedStepIndex === 0 ? "返回" : "上一题"}
-                </button>
-              </div>
-            </section>
+            <GuidedPanel
+              actionWillCreateDraft={guidedActionWillCreateDraft}
+              activeEntryMode={activeEntryMode}
+              draftAnswer={guidedDraftAnswer}
+              helperBlock={guidedHelperBlock}
+              onBack={handleGuidedBack}
+              onDraftAnswerChange={setGuidedDraftAnswer}
+              onNext={handleGuidedNext}
+              questionMultiline={guidedQuestion.multiline}
+              questionNote={guidedQuestion.note}
+              questionPlaceholder={guidedQuestion.placeholder}
+              questionPrompt={guidedQuestion.prompt}
+              refinementHint={guidedRefinementHint}
+              sourceContentDocument={guidedSourceContentDocument}
+              stepIndex={guidedStepIndex}
+              totalSteps={GUIDED_CORE_ORDER.length}
+            />
           ) : null}
 
           {stage === "editor" && workspace ? (
@@ -2887,7 +2825,6 @@ export function ResumeStudio() {
                   <p className="inline-note">
                     如果你已经知道还缺第二段教育或经历，可以直接从下面继续加。
                   </p>
-                  {statusMessage ? <p className="inline-note">{statusMessage}</p> : null}
                   <div className="entry-actions">
                     <button className="primary-button" onClick={handleStartStrengthening} type="button">
                       继续完善这版
@@ -3253,7 +3190,6 @@ export function ResumeStudio() {
                   {statusCard ? <p className="status-card-summary">{statusCard.summary}</p> : null}
                   {statusCard ? <p className="status-card-reason">{statusCard.reason}</p> : null}
                   {statusCard ? <p className="status-card-next">{statusCard.next}</p> : null}
-                  {statusMessage ? <p className="inline-note">{statusMessage}</p> : null}
                 </section>
               ) : null}
 
@@ -3366,124 +3302,23 @@ export function ResumeStudio() {
               )}
 
               {isStrengtheningSectionExpanded("internship") ? (
-                <section className="studio-block" ref={experienceSectionRef}>
-                  <div className="block-heading">
-                    <div>
-                      <p className="block-kicker">实习</p>
-                      <h3>实习经历</h3>
-                    </div>
-                    <button
-                      className="secondary-button"
-                      onClick={() => handleAddExperience("internship")}
-                      type="button"
-                    >
-                      新增实习经历
-                    </button>
-                  </div>
-                  <p className="block-copy">
-                    当前共有 {internshipExperiences.length} 段实习，后面继续补也不会覆盖前面内容。
-                  </p>
-                  <div className="stacked-editor">
-                    {internshipExperiences.map((experience, index) => (
-                      <article className="editor-card" key={experience.id}>
-                        <div className="editor-card-header">
-                          <strong>实习 {index + 1}</strong>
-                          <div className="editor-card-actions">
-                            <button
-                              className="text-button"
-                              disabled={experienceSuggestions[experience.id]?.status === "generating"}
-                              onClick={() => handleAiRewrite(experience.id)}
-                              type="button"
-                            >
-                              {experienceSuggestions[experience.id]?.status === "generating"
-                                ? "润色中..."
-                                : "帮我润色"}
-                            </button>
-                            {internshipExperiences.length > 1 ? (
-                              <button
-                                className="text-button"
-                                onClick={() => handleRemoveExperience(experience.id)}
-                                type="button"
-                              >
-                                删除
-                              </button>
-                            ) : null}
-                          </div>
-                        </div>
-                        <div className="editor-grid editor-grid-two">
-                          <label className="field">
-                            <span>公司/组织</span>
-                            <input
-                              aria-label="公司/组织"
-                              onChange={(event) =>
-                                handleExperienceFieldChange(
-                                  experience.id,
-                                  "organization",
-                                  event.target.value,
-                                )
-                              }
-                              value={experience.organization}
-                            />
-                          </label>
-                          <label className="field">
-                            <span>岗位/身份</span>
-                            <input
-                              onChange={(event) =>
-                                handleExperienceFieldChange(experience.id, "role", event.target.value)
-                              }
-                              value={experience.role}
-                            />
-                          </label>
-                          <label className="field">
-                            <span>时间</span>
-                            <input
-                              onChange={(event) =>
-                                handleExperienceFieldChange(
-                                  experience.id,
-                                  "dateRange",
-                                  event.target.value,
-                                )
-                              }
-                              value={experience.dateRange}
-                            />
-                          </label>
-                          <label className="field">
-                            <span>补充说明（可选）</span>
-                            <input
-                              onChange={(event) =>
-                                handleExperienceFieldChange(
-                                  experience.id,
-                                  "organizationNote",
-                                  event.target.value,
-                                )
-                              }
-                              placeholder="例如：蚂蚁集团投资"
-                              value={experience.organizationNote ?? ""}
-                            />
-                          </label>
-                        </div>
-                        <label className="field">
-                          <div className="field-label-row">
-                            <span>经历要点</span>
-                            <span className="field-helper-inline">按 Enter 换行，一行一条</span>
-                          </div>
-                          <p className="field-helper-copy">系统会自动拆成多条经历要点并同步预览</p>
-                          <textarea
-                            aria-label="经历要点"
-                            onBlur={() => handleExperienceBulletsBlur(experience.id)}
-                            onChange={(event) =>
-                              handleExperienceBulletsChange(experience.id, event.target.value)
-                            }
-                            placeholder={"例如：推进 8 个岗位招聘流程\n协调候选人与面试官排期并跟进结果"}
-                            rows={4}
-                            value={getExperienceBulletDraftValue(experience)}
-                          />
-                        </label>
-                        {renderExperienceSuggestion(experience)}
-                      </article>
-                    ))}
-                  </div>
-                </section>
+                <ExperienceSectionEditor
+                  experiences={internshipExperiences}
+                  experienceSuggestions={experienceSuggestions}
+                  getBulletDraftValue={getExperienceBulletDraftValue}
+                  kicker="实习"
+                  onAdd={handleAddExperience}
+                  onAiRewrite={handleAiRewrite}
+                  onBulletsBlur={handleExperienceBulletsBlur}
+                  onBulletsChange={handleExperienceBulletsChange}
+                  onFieldChange={handleExperienceFieldChange}
+                  onRemove={handleRemoveExperience}
+                  renderSuggestion={renderExperienceSuggestion}
+                  sectionLabel="实习经历"
+                  sectionRef={experienceSectionRef}
+                  sectionType="internship"
+                  title="实习经历"
+                />
               ) : (
                 renderCollapsedEditorSection({
                   kicker: "实习",
@@ -3498,124 +3333,23 @@ export function ResumeStudio() {
               )}
 
               {isStrengtheningSectionExpanded("campus") ? (
-                <section className="studio-block" ref={campusSectionRef}>
-                  <div className="block-heading">
-                    <div>
-                      <p className="block-kicker">在校</p>
-                      <h3>在校经历</h3>
-                    </div>
-                    <button
-                      className="secondary-button"
-                      onClick={() => handleAddExperience("campus")}
-                      type="button"
-                    >
-                      新增在校经历
-                    </button>
-                  </div>
-                  <p className="block-copy">
-                    当前共有 {campusExperiences.length} 段在校经历，后面继续补也不会覆盖前面内容。
-                  </p>
-                  <div className="stacked-editor">
-                    {campusExperiences.length === 0 ? (
-                      <p className="inline-note">还没有在校经历，可以继续补充。</p>
-                    ) : null}
-                    {campusExperiences.map((experience, index) => (
-                      <article className="editor-card" key={experience.id}>
-                        <div className="editor-card-header">
-                          <strong>在校经历 {index + 1}</strong>
-                          <div className="editor-card-actions">
-                            <button
-                              className="text-button"
-                              disabled={experienceSuggestions[experience.id]?.status === "generating"}
-                              onClick={() => handleAiRewrite(experience.id)}
-                              type="button"
-                            >
-                              {experienceSuggestions[experience.id]?.status === "generating"
-                                ? "润色中..."
-                                : "帮我润色"}
-                            </button>
-                            <button
-                              className="text-button"
-                              onClick={() => handleRemoveExperience(experience.id)}
-                              type="button"
-                            >
-                              删除
-                            </button>
-                          </div>
-                        </div>
-                        <div className="editor-grid editor-grid-two">
-                          <label className="field">
-                            <span>公司/组织</span>
-                            <input
-                              aria-label="公司/组织"
-                              onChange={(event) =>
-                                handleExperienceFieldChange(
-                                  experience.id,
-                                  "organization",
-                                  event.target.value,
-                                )
-                              }
-                              value={experience.organization}
-                            />
-                          </label>
-                          <label className="field">
-                            <span>岗位/身份</span>
-                            <input
-                              onChange={(event) =>
-                                handleExperienceFieldChange(experience.id, "role", event.target.value)
-                              }
-                              value={experience.role}
-                            />
-                          </label>
-                          <label className="field">
-                            <span>时间</span>
-                            <input
-                              onChange={(event) =>
-                                handleExperienceFieldChange(
-                                  experience.id,
-                                  "dateRange",
-                                  event.target.value,
-                                )
-                              }
-                              value={experience.dateRange}
-                            />
-                          </label>
-                          <label className="field">
-                            <span>补充说明（可选）</span>
-                            <input
-                              onChange={(event) =>
-                                handleExperienceFieldChange(
-                                  experience.id,
-                                  "organizationNote",
-                                  event.target.value,
-                                )
-                              }
-                              value={experience.organizationNote ?? ""}
-                            />
-                          </label>
-                        </div>
-                        <label className="field">
-                          <div className="field-label-row">
-                            <span>经历要点</span>
-                            <span className="field-helper-inline">按 Enter 换行，一行一条</span>
-                          </div>
-                          <p className="field-helper-copy">系统会自动拆成多条经历要点并同步预览</p>
-                          <textarea
-                            aria-label="经历要点"
-                            onBlur={() => handleExperienceBulletsBlur(experience.id)}
-                            onChange={(event) =>
-                              handleExperienceBulletsChange(experience.id, event.target.value)
-                            }
-                            placeholder={"例如：组织学院活动并协调分工\n复盘报名与到场数据，形成优化建议"}
-                            rows={4}
-                            value={getExperienceBulletDraftValue(experience)}
-                          />
-                        </label>
-                        {renderExperienceSuggestion(experience)}
-                      </article>
-                    ))}
-                  </div>
-                </section>
+                <ExperienceSectionEditor
+                  experiences={campusExperiences}
+                  experienceSuggestions={experienceSuggestions}
+                  getBulletDraftValue={getExperienceBulletDraftValue}
+                  kicker="在校"
+                  onAdd={handleAddExperience}
+                  onAiRewrite={handleAiRewrite}
+                  onBulletsBlur={handleExperienceBulletsBlur}
+                  onBulletsChange={handleExperienceBulletsChange}
+                  onFieldChange={handleExperienceFieldChange}
+                  onRemove={handleRemoveExperience}
+                  renderSuggestion={renderExperienceSuggestion}
+                  sectionLabel="在校经历"
+                  sectionRef={campusSectionRef}
+                  sectionType="campus"
+                  title="在校经历"
+                />
               ) : (
                 renderCollapsedEditorSection({
                   kicker: "在校",
@@ -3676,91 +3410,30 @@ export function ResumeStudio() {
             stage === "editor" ? "studio-right-sticky" : ""
           }`.trim()}
         >
-          {stage === "editor" && workspace ? (
-            <section className="preview-rail">
-                <div className="preview-header">
-                  <div>
-                  <p className="block-kicker">预览</p>
-                  <h3>{shouldShowStarterPreview ? "第一版预览" : "简历预览"}</h3>
-                  </div>
-                </div>
-              <p className="preview-summary">{previewSummary}</p>
-              <div className="preview-sheet-wrap">
-                <ResumePreview onMeasurementChange={setPreviewMeasurement} workspace={workspace} />
-              </div>
-              <div className="preview-actions-card">
-                  <div className="preview-actions-header">
-                    <div>
-                      <p className="block-kicker">导出</p>
-                      <h4 className="preview-actions-title">导出与打印</h4>
-                    </div>
-                    {editorFlowMode !== "starter" && previewMeasurement && previewMeasurement.status !== "fits" ? (
-                      <span className="block-status warn">已超出一页</span>
-                    ) : null}
-                  </div>
-                  <p className="preview-actions-copy">
-                    {starterExportLockSignature
-                      ? editorFlowMode === "starter"
-                        ? "这还是第一版，建议先补 1 条关键信息后再导出。"
-                        : "这还是第一版，建议先补完当前这一条再导出。"
-                      : previewMeasurement && previewMeasurement.status !== "fits"
-                      ? "当前版本已超出一页，导出后会分页。"
-                      : "先确认右侧是一页，再导出 PDF。"}
-                  </p>
-                  <div className="preview-actions-grid">
-                    <button
-                      className="secondary-button preview-action-button"
-                      disabled={starterExportBlocked}
-                      onClick={handleExportHtml}
-                      type="button"
-                    >
-                      导出网页版
-                    </button>
-                    <button
-                      className="primary-button preview-action-button"
-                      disabled={starterExportBlocked}
-                      onClick={handlePrintPdf}
-                      type="button"
-                    >
-                      导出 PDF
-                    </button>
-                  </div>
-                </div>
-            </section>
-          ) : stage === "guided" && guidedPreviewWorkspace ? (
-            <section className="preview-rail">
-              <div className="preview-header">
-                <div>
-                  <p className="block-kicker">预览</p>
-                  <h3>实时预览</h3>
-                </div>
-              </div>
-              <p className="preview-summary">
-                当前为{describeDensity(guidedPreviewWorkspace.layoutPlan.density)}草稿，内容
-                {describeContentBalance(
-                  deriveVisualContentBalance(
-                    previewMeasurement,
-                    guidedPreviewWorkspace.layoutPlan.contentBalance,
-                  ),
-                )}
-                。
-              </p>
-              <div className="preview-sheet-wrap">
-                <ResumePreview
-                  onMeasurementChange={setPreviewMeasurement}
-                  workspace={guidedPreviewWorkspace}
-                />
-              </div>
-            </section>
-          ) : (
-            <div className="preview-empty">
-              <p className="block-kicker">预览</p>
-              <h3>第一版预览会先出现在这里</h3>
-              <p>
-                先从左边开始。我们会先整理出第一版简历，再陪你继续完善。
-              </p>
-            </div>
-          )}
+          <PreviewRail
+            editorFlowMode={editorFlowMode}
+            guidedPreviewSummary={
+              guidedPreviewWorkspace
+                ? `当前为${describeDensity(guidedPreviewWorkspace.layoutPlan.density)}草稿，内容${describeContentBalance(
+                    deriveVisualContentBalance(
+                      previewMeasurement,
+                      guidedPreviewWorkspace.layoutPlan.contentBalance,
+                    ),
+                  )}。`
+                : ""
+            }
+            guidedPreviewWorkspace={guidedPreviewWorkspace}
+            isStarterPreview={shouldShowStarterPreview}
+            onExportHtml={handleExportHtml}
+            onMeasurementChange={setPreviewMeasurement}
+            onPrintPdf={handlePrintPdf}
+            previewMeasurement={previewMeasurement}
+            previewSummary={previewSummary}
+            stage={stage}
+            starterExportBlocked={starterExportBlocked}
+            starterExportLockSignature={starterExportLockSignature}
+            workspace={workspace}
+          />
         </div>
       </section>
 

@@ -8,7 +8,7 @@ import { getAnthropicConfig, requestAnthropicJson } from "@/lib/anthropic";
 
 const requestSchema = z.object({
   questionIndex: z.number().min(0),
-  latestAnswer: z.string().optional(),
+  latestAnswer: z.string().max(2000).optional(),
 });
 
 const responseSchema = z.object({
@@ -31,7 +31,14 @@ export async function POST(request: Request) {
     );
   }
 
-  const parsed = requestSchema.safeParse(await request.json());
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ message: "请求格式错误。" }, { status: 400 });
+  }
+
+  const parsed = requestSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json({ message: "参数不完整。" }, { status: 400 });
   }

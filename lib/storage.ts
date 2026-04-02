@@ -22,34 +22,46 @@ export const saveWorkspace = async (workspace: WorkspaceData) => {
     return;
   }
 
-  const dehydratedWorkspace = dehydrateWorkspaceData(workspace);
+  try {
+    const dehydratedWorkspace = dehydrateWorkspaceData(workspace);
 
-  const db = await getDb();
-  await db.put(
-    STORE_NAME,
-    {
-      contentDocument: dehydratedWorkspace.contentDocument,
-      templateSession: dehydratedWorkspace.templateSession,
-      renderState: dehydratedWorkspace.renderState,
-      meta: dehydratedWorkspace.meta,
-    },
-    WORKSPACE_KEY,
-  );
+    const db = await getDb();
+    await db.put(
+      STORE_NAME,
+      {
+        contentDocument: dehydratedWorkspace.contentDocument,
+        templateSession: dehydratedWorkspace.templateSession,
+        renderState: dehydratedWorkspace.renderState,
+        meta: dehydratedWorkspace.meta,
+      },
+      WORKSPACE_KEY,
+    );
+  } catch {
+    // IndexedDB unavailable (Firefox private mode, quota exceeded, etc.)
+  }
 };
 
 export const loadWorkspace = async (): Promise<WorkspaceData | undefined> => {
   if (!hasIndexedDb()) {
     return undefined;
   }
-  const db = await getDb();
-  const persisted = await db.get(STORE_NAME, WORKSPACE_KEY);
-  return hydrateWorkspaceData(persisted);
+  try {
+    const db = await getDb();
+    const persisted = await db.get(STORE_NAME, WORKSPACE_KEY);
+    return hydrateWorkspaceData(persisted);
+  } catch {
+    return undefined;
+  }
 };
 
 export const clearWorkspace = async () => {
   if (!hasIndexedDb()) {
     return;
   }
-  const db = await getDb();
-  await db.delete(STORE_NAME, WORKSPACE_KEY);
+  try {
+    const db = await getDb();
+    await db.delete(STORE_NAME, WORKSPACE_KEY);
+  } catch {
+    // IndexedDB unavailable
+  }
 };

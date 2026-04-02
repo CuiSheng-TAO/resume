@@ -32,21 +32,39 @@ const compactifyBullet = (value: string) =>
     .replace(/帮助/g, "")
     .replace(/\s+/g, "");
 
+const prioritizeByMetrics = (bullets: string[]) => {
+  const withMetrics = bullets.filter((b) => /\d/.test(b));
+  const withoutMetrics = bullets.filter((b) => !/\d/.test(b));
+  return [...withMetrics, ...withoutMetrics];
+};
+
 export const deriveExperienceVariants = (
   bullets: string[],
 ): Record<ExperienceVariantKey, string> => {
   const normalizedBullets = normalizeExperienceBullets(bullets);
-  const finalizedBullets = normalizedBullets.map((item) => ensureSentenceEnding(item));
-  const joined = finalizedBullets.join(" ");
-  const primary = finalizedBullets[0] ?? "";
-  const compact = finalizedBullets.map((item) => compactifyBullet(item)).join(" ");
+  if (normalizedBullets.length === 0) {
+    return { raw: "", star: "", standard: "", compact: "" };
+  }
 
-  return {
-    raw: joined,
-    star: joined || primary,
-    standard: joined || primary,
-    compact,
-  };
+  const finalizedBullets = normalizedBullets.map((item) => ensureSentenceEnding(item));
+  const metricsFirst = prioritizeByMetrics(finalizedBullets);
+
+  // raw: all bullets, original order
+  const raw = finalizedBullets.join("\n");
+
+  // star: all bullets, metrics-bearing ones prioritized to top
+  const star = metricsFirst.join("\n");
+
+  // standard: up to 3 bullets, prefer metric-bearing
+  const standard = metricsFirst.slice(0, Math.min(finalizedBullets.length, 3)).join("\n");
+
+  // compact: up to 2 bullets, condensed wording
+  const compact = metricsFirst
+    .slice(0, Math.min(finalizedBullets.length, 2))
+    .map((item) => compactifyBullet(item))
+    .join("\n");
+
+  return { raw, star, standard, compact };
 };
 
 export const extractExperienceMetrics = (bullets: string[]) =>

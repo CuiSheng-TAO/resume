@@ -24,7 +24,7 @@ const contentDocumentSchema = z.object({
 
 const requestSchema = z.object({
   contentDocument: contentDocumentSchema,
-  stylePreference: z.string().optional(),
+  stylePreference: z.string().max(500).optional(),
 });
 
 const responseSchema = z
@@ -103,7 +103,14 @@ export async function POST(request: Request) {
     );
   }
 
-  const parsed = requestSchema.safeParse(await request.json());
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ message: "请求格式错误。" }, { status: 400 });
+  }
+
+  const parsed = requestSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json({ message: "参数不完整。" }, { status: 400 });
   }

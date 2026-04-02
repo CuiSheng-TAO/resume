@@ -92,7 +92,19 @@ export const escapeHtml = (value: string) =>
     .replaceAll("&", "&amp;")
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;");
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#x27;");
+
+export const sanitizeHref = (url: string) => {
+  const trimmed = url.trim();
+  if (/^https?:\/\//i.test(trimmed)) {
+    return trimmed;
+  }
+  if (/^mailto:/i.test(trimmed)) {
+    return trimmed;
+  }
+  return "";
+};
 
 const normalizeHighlights = (highlights?: EducationHighlight[]) =>
   (highlights ?? []).filter((item) => item.label.trim() && item.value.trim());
@@ -160,12 +172,14 @@ export const sortEducationByRecency = (education: EducationAsset[]) =>
   });
 
 const normalizeBullets = (experience: ExperienceAsset, content: string) => {
-  const canonicalBullets = normalizeExperienceBullets(experience.bullets ?? []);
-  if (canonicalBullets.length > 0) {
-    return canonicalBullets;
+  // Prefer variant content — it contains variant-specific bullet selection/ordering
+  const variantBullets = normalizeExperienceBullets(content);
+  if (variantBullets.length > 0) {
+    return variantBullets;
   }
 
-  return normalizeExperienceBullets([content]);
+  // Fallback to canonical bullets if variant content is empty
+  return normalizeExperienceBullets(experience.bullets ?? []);
 };
 
 const getVariantContent = (workspace: WorkspaceData, experience: ExperienceAsset) => {

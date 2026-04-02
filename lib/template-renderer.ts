@@ -4,6 +4,7 @@ import {
   buildEducationSummaryLine,
   buildFlagshipReferenceModel,
   escapeHtml,
+  sanitizeHref,
   type FlagshipExperienceEntry,
 } from "@/lib/flagship-template";
 import {
@@ -53,7 +54,7 @@ const renderSectionHeading = (title: string) => `
 
 const renderHomepageBadge = (websiteUrl?: string, websiteLabel?: string) =>
   websiteUrl && websiteLabel
-    ? `<span class="resume-homepage-badge"><a href="${escapeHtml(websiteUrl)}">${escapeHtml(
+    ? `<span class="resume-homepage-badge"><a href="${escapeHtml(sanitizeHref(websiteUrl))}">${escapeHtml(
         websiteLabel,
       )}</a></span>`
     : "";
@@ -572,7 +573,7 @@ export const createResumeRenderTree = ({
   }));
 
 export const SHARED_RESUME_CSS = `
-  @import url('https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC:wght@400;700&display=swap');
+  @import url('https://fonts.loli.net/css2?family=LXGW+WenKai+TC:wght@400;700&display=swap');
 
   .resume-sheet, .flagship-page {
     --resume-accent: #1e3a5f;

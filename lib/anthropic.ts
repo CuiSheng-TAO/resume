@@ -154,7 +154,7 @@ export const requestAnthropicJson = async <T>({
         timeoutMs,
       );
 
-      const text = readTextFromAnthropicResponse(response);
+      const text = readTextFromAnthropicResponse(response as Anthropic.Message);
       return {
         data: parseJsonFromText(text, schema),
         attempts,

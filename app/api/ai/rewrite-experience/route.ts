@@ -8,15 +8,15 @@ import { getAnthropicConfig, requestAnthropicJson } from "@/lib/anthropic";
 import { deriveExperienceVariants } from "@/lib/experience";
 
 const experienceSchema = z.object({
-  organization: z.string(),
-  role: z.string(),
-  rawNarrative: z.string().optional().default(""),
-  bullets: z.array(z.string()).optional().default([]),
+  organization: z.string().max(200),
+  role: z.string().max(200),
+  rawNarrative: z.string().max(4000).optional().default(""),
+  bullets: z.array(z.string().max(1000)).optional().default([]),
 });
 
 const requestSchema = z.object({
   experience: experienceSchema,
-  targetRole: z.string().optional(),
+  targetRole: z.string().max(200).optional(),
 });
 
 const responseSchema = z.object({
@@ -40,7 +40,14 @@ export async function POST(request: Request) {
     );
   }
 
-  const parsed = requestSchema.safeParse(await request.json());
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ message: "请求格式错误。" }, { status: 400 });
+  }
+
+  const parsed = requestSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json({ message: "参数不完整。" }, { status: 400 });
   }

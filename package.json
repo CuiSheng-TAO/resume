@@ -11,8 +11,9 @@
     "verify:release": "npm test && npm run lint && npm run build && npm run smoke:local"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.80.0",
+    "@anthropic-ai/sdk": "^0.81.0",
     "debug": "^4.4.3",
+    "estree-walker": "^3.0.3",
     "idb": "^8.0.3",
     "next": "^16.2.1",
     "react": "^19.2.4",

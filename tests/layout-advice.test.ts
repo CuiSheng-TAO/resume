@@ -173,6 +173,8 @@ const createManifest = (overrides: Partial<TemplateManifest> & Pick<TemplateMani
       overflowPriority: ["awards", "skills", "experience"],
       ...overrides.compactionPolicy,
     },
+    displayName: overrides.displayName ?? "稳妥简洁",
+    description: overrides.description ?? "结构稳妥，适合先做出一版清楚的校招简历。",
   }) satisfies TemplateManifest;
 
 afterEach(() => {
@@ -186,8 +188,7 @@ describe("layout advice", () => {
     expect(advice.reasons[0]).toContain("超出 14px");
     expect(advice.suggestions[0]?.kind).toBe("switch-variant");
     expect(advice.suggestions[0]?.id).toContain("exp-3");
-    expect(advice.suggestions.some((item) => item.kind === "hide-award")).toBe(false);
-    expect(advice.suggestions.some((item) => item.kind === "hide-experience")).toBe(false);
+    expect(advice.suggestions.every((item) => item.kind === "switch-variant" || item.kind === "tighten-density")).toBe(true);
     expect(advice.sequence.map((item) => item.kind)).toEqual(["switch-variant", "switch-variant"]);
   });
 

@@ -28,6 +28,7 @@ type CreatePhotoAssetInput = {
 const MIN_WIDTH = 236;
 const MIN_HEIGHT = 307;
 const MIN_BYTES = 20_000;
+const MAX_BYTES = 8_000_000;
 const MAX_PORTRAIT_RATIO = 0.95;
 
 export const validatePhotoUpload = ({
@@ -36,6 +37,10 @@ export const validatePhotoUpload = ({
   sizeBytes,
 }: PhotoUploadInput): PhotoUploadResult => {
   const errors: string[] = [];
+
+  if (sizeBytes > MAX_BYTES) {
+    errors.push("照片文件过大（上限 8 MB），请压缩后重新上传。");
+  }
 
   if (width < MIN_WIDTH || height < MIN_HEIGHT) {
     errors.push(`照片清晰度不足，请上传至少 ${MIN_WIDTH}x${MIN_HEIGHT} 的证件照。`);

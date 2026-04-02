@@ -20,6 +20,8 @@ const createTemplateManifest = (
   version: "v1",
   templateId: overrides.templateId,
   name: overrides.name ?? overrides.templateId,
+  displayName: overrides.displayName ?? "稳妥简洁",
+  description: overrides.description ?? "结构稳妥，适合先做出一版清楚的校招简历。",
   tone: overrides.tone ?? "academic",
   page: {
     size: "A4",

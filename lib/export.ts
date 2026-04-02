@@ -37,32 +37,40 @@ export const exportResumeHtml = (workspace: WorkspaceData) => {
 export const exportResumeJson = (workspace: WorkspaceData) =>
   JSON.stringify(workspace, null, 2);
 
-export const printToPdf = (workspace: WorkspaceData) => {
-  const iframe = document.createElement("iframe");
-  iframe.style.position = "fixed";
-  iframe.style.right = "0";
-  iframe.style.bottom = "0";
-  iframe.style.width = "0";
-  iframe.style.height = "0";
-  iframe.style.border = "0";
-  iframe.style.opacity = "0";
-  iframe.style.pointerEvents = "none";
+export const printToPdf = (workspace: WorkspaceData): Promise<void> =>
+  new Promise((resolve, reject) => {
+    const iframe = document.createElement("iframe");
+    iframe.style.position = "fixed";
+    iframe.style.right = "0";
+    iframe.style.bottom = "0";
+    iframe.style.width = "0";
+    iframe.style.height = "0";
+    iframe.style.border = "0";
+    iframe.style.opacity = "0";
+    iframe.style.pointerEvents = "none";
 
-  iframe.onload = () => {
-    const frameWindow = iframe.contentWindow;
+    iframe.onload = () => {
+      const frameWindow = iframe.contentWindow;
 
-    if (!frameWindow) {
+      if (!frameWindow) {
+        iframe.remove();
+        reject(new Error("打印视图初始化失败，请稍后再试。"));
+        return;
+      }
+
+      frameWindow.focus();
+      frameWindow.print();
+      window.setTimeout(() => {
+        iframe.remove();
+        resolve();
+      }, 1000);
+    };
+
+    iframe.onerror = () => {
       iframe.remove();
-      throw new Error("打印视图初始化失败，请稍后再试。");
-    }
+      reject(new Error("打印视图加载失败，请稍后再试。"));
+    };
 
-    frameWindow.focus();
-    frameWindow.print();
-    window.setTimeout(() => {
-      iframe.remove();
-    }, 1000);
-  };
-
-  iframe.srcdoc = exportResumeHtml(workspace);
-  document.body.appendChild(iframe);
-};
+    iframe.srcdoc = exportResumeHtml(workspace);
+    document.body.appendChild(iframe);
+  });

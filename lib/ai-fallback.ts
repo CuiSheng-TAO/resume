@@ -22,29 +22,97 @@ type RewriteInput = {
   targetRole?: string;
 };
 
+const splitIntoSentences = (text: string): string[] => {
+  const normalized = text.replace(/\s+/g, "");
+  return normalized
+    .split(/[。！？!?;\n]/)
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0);
+};
+
+const VERB_UPGRADES: [RegExp, string][] = [
+  [/^做了/, "完成"],
+  [/^做过/, "完成"],
+  [/^帮助/, "协助"],
+  [/^帮/, "协助"],
+  [/^学了/, "掌握"],
+  [/^学会了/, "掌握"],
+  [/^用了/, "运用"],
+  [/^写了/, "撰写"],
+  [/^跟了/, "跟进"],
+  [/^看了/, "分析"],
+  [/^搞了/, "完成"],
+  [/^搞定/, "完成"],
+  [/^弄了/, "完成"],
+];
+
+const FILLER_PATTERNS = [
+  /^我(在[^，,。]*?)?(?=帮|做|写|学|用|跟|看|搞|弄|负责|参与|完成|推进|协助|支持|组织)/,
+  /^主要是/,
+  /^然后/,
+  /^还有就是/,
+  /^就是/,
+  /^其实/,
+  /^基本上/,
+];
+
+const strengthenBullet = (sentence: string): string => {
+  let result = sentence;
+  for (const pattern of FILLER_PATTERNS) {
+    result = result.replace(pattern, "");
+  }
+  for (const [pattern, replacement] of VERB_UPGRADES) {
+    if (pattern.test(result)) {
+      result = result.replace(pattern, replacement);
+      break;
+    }
+  }
+  return result;
+};
+
+const deduplicateBullets = (bullets: string[]): string[] => {
+  const kept: string[] = [];
+  for (const bullet of bullets) {
+    const subsumedIndex = kept.findIndex((existing) => {
+      const shorter = existing.length < bullet.length ? existing : bullet;
+      const longer = existing.length < bullet.length ? bullet : existing;
+      return longer.includes(shorter);
+    });
+    if (subsumedIndex === -1) {
+      kept.push(bullet);
+    } else if (bullet.length > kept[subsumedIndex].length) {
+      kept[subsumedIndex] = bullet;
+    }
+  }
+  return kept;
+};
+
 export const rewriteExperienceFallback = ({
   narrative,
   role,
   targetRole,
 }: RewriteInput): ExperienceRewriteSuggestion => {
-  const normalizedNarrative = narrative.replace(/\s+/g, "");
-  const clauses = normalizedNarrative
-    .split(/[，；。！？]/)
-    .map((item) => item.trim())
-    .filter(Boolean);
-  const hasMetrics = /\d/.test(normalizedNarrative);
-
-  const resultClause = clauses.filter((item) => /\d/.test(item)).join("，");
-  let suggestedBullets = normalizeExperienceBullets(
-    hasMetrics
-      ? [normalizedNarrative, resultClause]
-      : [normalizedNarrative || clauses[0]],
-  );
-
-  if (suggestedBullets.length === 0) {
-    suggestedBullets = normalizeExperienceBullets([normalizedNarrative]);
+  const sentences = splitIntoSentences(narrative);
+  if (sentences.length === 0) {
+    return {
+      suggestedBullets: [],
+      variants: deriveExperienceVariants([]),
+      rationale: "请先输入经历描述。",
+    };
   }
 
+  const strengthened = sentences.map(strengthenBullet).filter(Boolean);
+  const deduplicated = deduplicateBullets(strengthened);
+
+  const withMetrics = deduplicated.filter((b) => /\d/.test(b));
+  const withoutMetrics = deduplicated.filter((b) => !/\d/.test(b));
+  const ordered = [...withMetrics, ...withoutMetrics];
+
+  const suggestedBullets = normalizeExperienceBullets(
+    ordered.length > 0 ? ordered.slice(0, 3) : [narrative.replace(/\s+/g, "")],
+  );
+
+  const hasMetrics = withMetrics.length > 0;
   const followUpPrompt = hasMetrics
     ? undefined
     : `建议再补 1 个数字结果或${role || targetRole || "岗位"}中的关键难点，会更像正式简历。`;
@@ -71,18 +139,11 @@ export const buildFallbackIntakeTurn = (questionIndex: number, latestAnswer?: st
 });
 
 export const extractContentFallback = ({
-  entryMode,
   text,
 }: {
   entryMode: "guided" | "paste";
   text: string;
-}) => {
-  if (entryMode === "guided") {
-    return createBaselineContentDocumentFromPasteText(text);
-  }
-
-  return createBaselineContentDocumentFromPasteText(text);
-};
+}) => createBaselineContentDocumentFromPasteText(text);
 
 export const buildFallbackInterviewNext = ({
   contentDocument,
