@@ -126,12 +126,12 @@ describe("ResumeStudio", () => {
 
     expect(screen.getByRole("button", { name: "从零开始" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "导入旧材料" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "把你的第一版简历先做出来" })).toBeInTheDocument();
-    expect(screen.getByText("校招一页简历助手")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "先填基本信息，我们先整理出第一版简历。" })).toBeInTheDocument();
+    expect(screen.getByText("ResumeForge")).toBeInTheDocument();
     expect(screen.queryByText("Siamese Dream")).not.toBeInTheDocument();
     expect(container.querySelector(".hero-title-lockup")).not.toBeNull();
     expect(container.querySelector(".hero-side")).toBeNull();
-    expect(screen.getByText("先填写基本信息，再慢慢完善成可投递的一版。")).toBeInTheDocument();
+    expect(screen.getByText("这不是一个空白编辑器，而是一个会提问、会整理、会陪你慢慢补好的简历助手。")).toBeInTheDocument();
     expect(screen.queryByText("HR Companion Resume Studio")).not.toBeInTheDocument();
   });
 

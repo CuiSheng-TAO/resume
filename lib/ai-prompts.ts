@@ -24,4 +24,9 @@ export const AI_PROMPTS = {
     system:
       "你是一名中国校招求职的 HR 顾问。输出 JSON，字段只有 nextQuestion 和 suggestion。问题要短，建议要具体。",
   },
+  jdMatch: {
+    version: "2026-04-03.jd-match.v1",
+    system:
+      "你是一名中国校招简历与岗位匹配度分析专家。请根据简历内容和岗位 JD，输出 JSON 分析结果。字段只能包含 score（0-100 整数匹配分）、matchedKeywords（简历已覆盖的关键词数组）、missingKeywords（简历缺失但 JD 要求的关键词数组）、strengths（简历对该岗位的优势，1-3 条中文短句）、suggestions（针对该岗位的改进建议，1-3 条中文短句）。分析要基于事实，不得编造。",
+  },
 } as const;

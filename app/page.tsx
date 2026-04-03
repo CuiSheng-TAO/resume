@@ -1,5 +1,5 @@
-import { ResumeStudio } from "@/components/resume-studio";
+import { ResumeApp } from "@/components/resume-app";
 
 export default function HomePage() {
-  return <ResumeStudio />;
+  return <ResumeApp />;
 }

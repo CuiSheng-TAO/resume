@@ -60,6 +60,7 @@ import type {
 
 import { ExperienceSectionEditor } from "./experience-editor";
 import { GuidedPanel } from "./guided-panel";
+import { JdMatchPanel } from "./jd-match-panel";
 import { LandingPanel } from "./landing-panel";
 import { LayoutAdvicePanel } from "./layout-advice-panel";
 import { PastePanel } from "./paste-panel";
@@ -1126,8 +1127,14 @@ const createTemplateCandidateRefreshSignature = (contentDocument: ResumeContentD
     skills: contentDocument.skills,
   });
 
-export function ResumeStudio() {
-  const [stage, setStage] = useState<Stage>("landing");
+export function ResumeStudio({
+  initialText,
+  onBackToLanding,
+}: {
+  initialText?: string;
+  onBackToLanding?: () => void;
+}) {
+  const [stage, setStage] = useState<Stage>(initialText ? "paste" : initialText === undefined ? "landing" : "guided");
   const [editorFlowMode, setEditorFlowMode] = useState<EditorFlowMode>("review");
   const [workspace, setWorkspace] = useState<WorkspaceData | null>(null);
   const [templateCandidateState, setTemplateCandidateState] =
@@ -1218,6 +1225,67 @@ export function ResumeStudio() {
       }
     };
   }, []);
+
+  // Auto-trigger from new landing page entry
+  const initialTextProcessedRef = useRef(false);
+  useEffect(() => {
+    if (!initialText || initialTextProcessedRef.current) return;
+    initialTextProcessedRef.current = true;
+    initialRestoreLockedRef.current = true;
+
+    // Trigger the paste generate flow
+    setPasteText(initialText);
+    setActiveEntryMode("paste");
+    setIsPasteGenerating(true);
+
+    (async () => {
+      try {
+        const { contentDocument, intake } = await requestExtractedContent(initialText);
+        setActiveEntryMode("paste");
+
+        if (!intake.minimumDraftReady) {
+          const nextFocus = (listMissingCoreAreas(contentDocument)[0] ??
+            GUIDED_CORE_ORDER[0]) as GuidedCoreFocus;
+          const nextGuidedAnswers = buildGuidedAnswersFromContentDocument(contentDocument);
+          setWorkspace(null);
+          setIntakeFollowUpQuestion(null);
+          setGuidedSourceContentDocument(contentDocument);
+          setGuidedAnswers(nextGuidedAnswers);
+          setGuidedQuestionOrder([nextFocus]);
+          setGuidedStepIndex(0);
+          setGuidedDraftAnswer(GUIDED_QUESTION_MAP[nextFocus].getValue(nextGuidedAnswers));
+          setGuidedRefinementHint(null);
+          setShowAdditionalTemplateOptions(false);
+          setStarterExportLockSignature(null);
+          resetEditorState();
+          setStage("guided");
+          setStatusMessage("已先抽取可用信息，继续补齐后再整理骨架。");
+          return;
+        }
+
+        const next = createWorkspaceFromContentDocument(contentDocument);
+        const nextProgress = assessIntakeProgress(contentDocument, { hasDraft: true });
+        setWorkspace(next);
+        setTemplateCandidateState({ mode: "baseline" });
+        setIntakeFollowUpQuestion(null);
+        setEditorFlowMode(nextProgress.weakAreas.length > 0 ? "starter" : "review");
+        setStarterExportLockSignature(
+          nextProgress.weakAreas.length > 0
+            ? createTemplateCandidateRefreshSignature(contentDocument)
+            : null,
+        );
+        scheduleTemplateCandidateRefresh(contentDocument, next.templateSession?.selectedTemplateId);
+        setGuidedRefinementHint(null);
+        setShowAdditionalTemplateOptions(false);
+        resetEditorState();
+        setStage("editor");
+        setStatusMessage("已从现有材料整理出第一版简历。");
+      } finally {
+        setIsPasteGenerating(false);
+      }
+    })();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialText]);
 
   useEffect(() => {
     setFollowUpDraftAnswer("");
@@ -1778,7 +1846,9 @@ export function ResumeStudio() {
     setGuidedAnswers(committedAnswers);
 
     if (guidedStepIndex === 0) {
-      setStage("landing");
+      if (onBackToLanding) {
+        onBackToLanding();
+      }
       setGuidedDraftAnswer("");
       setGuidedRefinementHint(null);
       return;
@@ -2689,12 +2759,9 @@ export function ResumeStudio() {
       <section className={stage === "editor" ? "hero-strip hero-strip--compact" : "hero-strip"}>
         <div className="hero-brand">
           <div className="hero-title-lockup">
-            <h1>把你的第一版简历先做出来</h1>
-            <p className="hero-subtitle">校招一页简历助手</p>
+            <h1>{stage === "editor" ? "简历工作台" : "ResumeForge"}</h1>
+            <p className="hero-subtitle">你的经历值得更好的表达</p>
           </div>
-          {stage !== "editor" ? (
-            <p className="hero-note">先填写基本信息，再慢慢完善成可投递的一版。</p>
-          ) : null}
         </div>
       </section>
 
@@ -2728,13 +2795,16 @@ export function ResumeStudio() {
       >
         <div className="studio-left studio-panel studio-panel-editor">
           {stage === "landing" ? (
-            <LandingPanel onEnterGuided={handleEnterGuided} onEnterPaste={handleEnterPaste} />
+            <LandingPanel
+              onEnterGuided={handleEnterGuided}
+              onEnterPaste={handleEnterPaste}
+            />
           ) : null}
 
           {stage === "paste" ? (
             <PastePanel
               isPasteGenerating={isPasteGenerating}
-              onBack={() => setStage("landing")}
+              onBack={() => onBackToLanding ? onBackToLanding() : setStage("landing")}
               onGenerate={handleGenerateFromPaste}
               onPasteTextChange={setPasteText}
               pasteText={pasteText}
@@ -3329,6 +3399,17 @@ export function ResumeStudio() {
                   ) : null}
                 </>
               )}
+
+              <JdMatchPanel
+                resumeText={[
+                  workspace.profile.fullName,
+                  workspace.profile.targetRole,
+                  workspace.profile.summary,
+                  ...workspace.education.map((e) => `${e.school} ${e.degree}`),
+                  ...workspace.experiences.map((e) => `${e.organization} ${e.role} ${e.rawNarrative} ${(e.bullets ?? []).join(" ")}`),
+                  ...workspace.skills,
+                ].filter(Boolean).join("\n")}
+              />
 
             </>
           ) : null}
